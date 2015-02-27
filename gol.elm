@@ -6,11 +6,12 @@ import Graphics.Collage (..)
 import Graphics.Element (..)
 import Time (..)
 import Signal
+import Array
 
 type State = Dead | Alive
 type Condition = Underpopulation | Overcrowding | Reproduction | Stable
-type alias Cell = {x:Int, y:Int, state:State}
-type alias Game = {cells: List Cell}
+type alias Cell = {x: Int, y: Int, state: State}
+type alias Game = {cells: Array.Array (Array.Array Cell), rows: Int, cols: Int}
 
 black = Color.rgb 0 0 0
 
@@ -23,27 +24,33 @@ inRange x y dim2 =
 
 -- Game
 
-alive = [[1,1], [1,2], [2,1]]
+aliveCells = [[0,0], [0,1], [1,0]]
 
 initGame : (Int, Int) -> Game
 initGame (rows, cols) =
-  {cells = concat <| map (\row ->
-                             map (\col -> {x = row, y = col, state = (initCell row col)}) [1..cols])
-                      [1..rows]}
+  {
+    rows = rows,
+    cols = cols,
+    cells = Array.fromList <| map (\row ->
+                                     Array.fromList <| map (\col -> {x = row, y = col, state = (initCell row col)}) [0..cols-1])
+            [0..rows-1]
+  }
 
 updateGame : Float -> Game -> Game
 updateGame timestamp game =
-  {cells = map (\cell -> updateCell cell game) game.cells}
+  {game | cells <- Array.map (\row -> Array.map (\cell -> updateCell cell game) row) game.cells}
 
-getCell : Game -> Int -> Int -> Cell
+getCell : Game -> Int -> Int -> Maybe Cell
 getCell game x y =
-  head <| filter (\cell -> cell.x == x && cell.y == y) (game.cells)
+  case Array.get x game.cells of
+    Nothing -> Nothing
+    Just row -> Array.get y row
 
 -- Cell
 
 initCell : Int -> Int -> State
-initCell row col =
-  case (any (\[x,y] -> x == row && y == col) alive) of
+initCell row col = 
+  case (any (\[x,y] -> x == row && y == col) aliveCells) of
     True -> Alive
     False -> Dead
 
@@ -55,21 +62,25 @@ updateCell cell game =
                      Reproduction -> Alive
                      Stable -> Alive}
 
-neighbours : Cell -> Game -> List Cell
+neighbours : Cell -> Game -> List (Maybe Cell)
 neighbours cell game =
-  map (\(x,y) -> getCell game x y) <| filter (\(x,y) -> inRange x y (length game.cells))
-                                              [(cell.x - 1, cell.y - 1),
-                                               (cell.x, cell.y - 1),
-                                               (cell.x + 1, cell.y - 1),
-                                               (cell.x - 1, cell.y),
-                                               (cell.x + 1, cell.y),
-                                               (cell.x - 1, cell.y + 1),
-                                               (cell.x, cell.y + 1),
-                                               (cell.x + 1, cell.y + 1)]
+  [
+   getCell game (cell.x - 1) (cell.y - 1),
+   getCell game cell.x (cell.y - 1),
+   getCell game (cell.x + 1) (cell.y - 1),
+   getCell game (cell.x - 1) cell.y,
+   getCell game (cell.x + 1) cell.y,
+   getCell game (cell.x - 1) (cell.y + 1),
+   getCell game cell.x (cell.y + 1),
+   getCell game (cell.x + 1) (cell.y + 1)
+  ]
 
-cellCondition : List Cell -> Condition
+cellCondition : List (Maybe Cell) -> Condition
 cellCondition neighbours =
-  let aliveNeighbours = length <| filter (\cell -> cell.state == Alive) neighbours in
+  let aliveNeighbours = length <| filter (\cell ->
+                                            case cell of
+                                              Nothing -> False
+                                              Just cell -> cell.state == Alive) neighbours in
   if | aliveNeighbours < 2 -> Underpopulation
      | aliveNeighbours == 2 -> Stable
      | aliveNeighbours > 3 -> Overcrowding
@@ -84,7 +95,7 @@ displayCell cell size =
   rect (toFloat size) (toFloat size) |> filled (case cell.state of
                                                   Dead -> Color.white
                                                   Alive -> Color.black)
-                                     |> move (toFloat <| cell.x * size, toFloat <| -cell.y * size)
+                                     |> move (toFloat <| (cell.x + 1) * size, toFloat <| -(cell.y + 1) * size)
 
 display : Game -> (Int, Int) -> Element
 display game (w, h) =
@@ -92,7 +103,7 @@ display game (w, h) =
   in
     collage w h
               [
-               group (map (\cell -> displayCell cell cellSize) game.cells) |> move (-(toFloat w)/2, (toFloat h)/2)
+               group (map (\cell -> displayCell cell cellSize) (concatMap Array.toList (Array.toList game.cells))) |> move (-(toFloat w)/2, (toFloat h)/2)
               ]
 
 gameState : Signal Game
