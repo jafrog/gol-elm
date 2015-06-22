@@ -1,9 +1,11 @@
+module GoL where
+
 import Signal
 import Window
-import Html (..)
+import Html exposing (..)
 import Html.Attributes
 import Html.Events
-import String (..)
+import String exposing (..)
 
 import Game
 
@@ -11,8 +13,8 @@ type Action
   = NoOp |
     CellSize String
 
-updates : Signal.Channel Action
-updates = Signal.channel NoOp
+updates : Signal.Mailbox Action
+updates = Signal.mailbox NoOp
 
 cellSizeSlider : String -> Html
 cellSizeSlider cellSize = div
@@ -28,7 +30,7 @@ cellSizeSlider cellSize = div
                             Html.Attributes.min "5",
                             Html.Attributes.max "100",
                             Html.Attributes.step 5,
-                            Html.Events.on "change" Html.Events.targetValue (Signal.send updates << CellSize)
+                            Html.Events.on "change" Html.Events.targetValue (Signal.send updates CellSize)
                            ]
                            []
                           ]
@@ -43,5 +45,5 @@ view state (w,h) action =
          fromElement <| Game.display state (w,h) cellSize
         ]
 
-main = Signal.map3 view Game.gameState Window.dimensions (Signal.subscribe updates)
+main = Signal.map3 view Game.gameState Window.dimensions (updates.signal)
 
