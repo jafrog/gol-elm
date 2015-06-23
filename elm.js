@@ -297,8 +297,7 @@ Elm.Cell.make = function (_elm) {
          switch (_v0.ctor)
          {case "Alive":
             return $Color.black;
-            case "Dead":
-            return $Color.white;}
+            case "Dead": return $Color.red;}
          _U.badCase($moduleName,
          "between lines 25 and 27");
       }())(A2($Graphics$Collage.rect,
@@ -1940,7 +1939,7 @@ Elm.Game.make = function (_elm) {
             case "Nothing":
             return $Maybe.Nothing;}
          _U.badCase($moduleName,
-         "between lines 46 and 48");
+         "between lines 47 and 49");
       }();
    });
    var neighbours = F2(function (cell,
@@ -1978,65 +1977,42 @@ Elm.Game.make = function (_elm) {
                           cell.x + 1,
                           cell.y + 1)]);
    });
-   var update = F3(function (action,
-   _v2,
+   var update = F2(function (event,
    game) {
       return function () {
+         var _v2 = A2($Debug.watch,
+         "event",
+         event);
          switch (_v2.ctor)
-         {case "_Tuple2":
-            return function () {
-                 var _v6 = A2($Debug.watch,
-                 "action",
-                 action);
-                 switch (_v6.ctor)
-                 {case "Dimensions":
-                    switch (_v6._0.ctor)
-                      {case "_Tuple2":
-                         return _U.replace([["w"
-                                            ,_v6._0._0]
-                                           ,["h",_v6._0._1]],
-                           game);}
-                      break;
-                    case "Update":
-                    return _U.replace([["cells"
-                                       ,A2($Array.map,
-                                       function (row) {
-                                          return A2($Array.map,
-                                          function (cell) {
-                                             return A2($Cell.update,
-                                             A2(neighbours,cell,game),
-                                             cell);
-                                          },
-                                          row);
-                                       },
-                                       game.cells)]],
-                      game);}
-                 _U.badCase($moduleName,
-                 "between lines 40 and 42");
-              }();}
+         {case "Dimensions":
+            switch (_v2._0.ctor)
+              {case "_Tuple2":
+                 return _U.replace([["w"
+                                    ,_v2._0._0]
+                                   ,["h",_v2._0._1]],
+                   game);}
+              break;
+            case "Timestamp":
+            return _U.replace([["cells"
+                               ,A2($Array.map,
+                               function (row) {
+                                  return A2($Array.map,
+                                  function (cell) {
+                                     return A2($Cell.update,
+                                     A2(neighbours,cell,game),
+                                     cell);
+                                  },
+                                  row);
+                               },
+                               game.cells)]],
+              game);}
          _U.badCase($moduleName,
-         "between lines 40 and 42");
+         "between lines 41 and 43");
       }();
    });
-   var step = F2(function (timestamp,
-   game) {
-      return _U.replace([["cells"
-                         ,A2($Array.map,
-                         function (row) {
-                            return A2($Array.map,
-                            function (cell) {
-                               return A2($Cell.update,
-                               A2(neighbours,cell,game),
-                               cell);
-                            },
-                            row);
-                         },
-                         game.cells)]],
-      game);
-   });
-   var init = function (_v10) {
+   var init = function (_v7) {
       return function () {
-         switch (_v10.ctor)
+         switch (_v7.ctor)
          {case "_Tuple2": return {_: {}
                                  ,cells: $Array.fromList(A2($List.map,
                                  function (row) {
@@ -2046,23 +2022,17 @@ Elm.Game.make = function (_elm) {
                                        row,
                                        col);
                                     },
-                                    _L.range(0,_v10._1 - 1)));
+                                    _L.range(0,_v7._1 - 1)));
                                  },
-                                 _L.range(0,_v10._0 - 1)))
-                                 ,cols: _v10._1
-                                 ,h: 100
-                                 ,rows: _v10._0
-                                 ,w: 100};}
+                                 _L.range(0,_v7._0 - 1)))
+                                 ,cols: _v7._1
+                                 ,h: 1000
+                                 ,rows: _v7._0
+                                 ,w: 1000};}
          _U.badCase($moduleName,
-         "between lines 23 and 29");
+         "between lines 24 and 30");
       }();
    };
-   var gameState = A3($Signal.foldp,
-   step,
-   init({ctor: "_Tuple2"
-        ,_0: gameSize
-        ,_1: gameSize}),
-   $Time.every($Time.second));
    var Model = F5(function (a,
    b,
    c,
@@ -2075,8 +2045,16 @@ Elm.Game.make = function (_elm) {
              ,rows: b
              ,w: d};
    });
+   var Timestamp = function (a) {
+      return {ctor: "Timestamp"
+             ,_0: a};
+   };
    var Dimensions = function (a) {
       return {ctor: "Dimensions"
+             ,_0: a};
+   };
+   var UserAction = function (a) {
+      return {ctor: "UserAction"
              ,_0: a};
    };
    var Condition = function (a) {
@@ -2085,9 +2063,7 @@ Elm.Game.make = function (_elm) {
    };
    var Reset = {ctor: "Reset"};
    var Stop = {ctor: "Stop"};
-   var Start = {ctor: "Start"};
-   var Update = {ctor: "Update"};
-   var mailbox = $Signal.mailbox(Update);
+   var mailbox = $Signal.mailbox(Stop);
    var view = function (game) {
       return A2($Html.div,
       _L.fromArray([]),
@@ -2109,29 +2085,42 @@ Elm.Game.make = function (_elm) {
       $Array.toList,
       $Array.toList(game.cells)))))])))]));
    };
+   var updates = $Signal.mergeMany(_L.fromArray([A2($Signal.map,
+                                                UserAction,
+                                                mailbox.signal)
+                                                ,A2($Signal.map,
+                                                Dimensions,
+                                                $Window.dimensions)
+                                                ,A2($Signal.map,
+                                                Timestamp,
+                                                $Time.every($Time.second))]));
+   var gameState = A3($Signal.foldp,
+   update,
+   init({ctor: "_Tuple2"
+        ,_0: gameSize
+        ,_1: gameSize}),
+   updates);
    var main = A2($Signal.map,
    view,
-   A4($Signal.map3,
-   update,
-   mailbox.signal,
-   $Window.dimensions,
-   gameState));
+   gameState);
+   var Start = {ctor: "Start"};
    _elm.Game.values = {_op: _op
-                      ,Update: Update
                       ,Start: Start
                       ,Stop: Stop
                       ,Reset: Reset
                       ,Condition: Condition
+                      ,UserAction: UserAction
                       ,Dimensions: Dimensions
+                      ,Timestamp: Timestamp
                       ,Model: Model
                       ,init: init
                       ,mailbox: mailbox
-                      ,step: step
                       ,update: update
                       ,getCell: getCell
                       ,neighbours: neighbours
                       ,gameSize: gameSize
                       ,view: view
+                      ,updates: updates
                       ,gameState: gameState
                       ,main: main};
    return _elm.Game.values;

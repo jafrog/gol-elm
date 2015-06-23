@@ -1,6 +1,7 @@
 module Cell (Model, init, Condition, update, view, State) where
 
-import Graphics.Collage exposing (rect, filled, move, Form)
+import Graphics.Collage exposing (rect, filled, outlined, solid, move, Form)
+import Graphics.Input exposing (clickable)
 import Color
 import List exposing (length, filter)
 
@@ -20,12 +21,13 @@ update neighbours model =
                       Reproduction -> Alive
                       Stable -> Alive}
 
-view : Signal.Address Condition -> Model -> Int -> Form
+view : Signal.Address State -> Model -> Int -> Form
 view address model size =
   rect (toFloat size) (toFloat size) |> filled (case model.state of
-                                                  Dead -> Color.white
+                                                  Dead -> Color.red
                                                   Alive -> Color.black)
                                      |> move (toFloat <| (model.x + 1) * size, toFloat <| -(model.y + 1) * size)
+                                     |> clickable (Signal.message address model.state)
 
 condition : List (Maybe Model) -> Condition
 condition neighbours =

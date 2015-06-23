@@ -14,7 +14,8 @@ import Html exposing (Html, div, fromElement)
 
 import Cell
 
-type Action = Update | Start | Stop | Reset | Condition Cell.Condition | Dimensions (Int, Int)
+type Action = Start | Stop | Reset | Condition Cell.State
+type Updates = UserAction Action | Dimensions (Int, Int) | Timestamp Float
 type alias Model = {cells: Array (Array Cell.Model), rows: Int, cols: Int, w: Int, h: Int}
 
 init : (Int, Int) -> Model
@@ -22,24 +23,24 @@ init (rows, cols) =
   {
     rows = rows,
     cols = cols,
-    w = 100,
-    h = 100,
+    w = 1000,
+    h = 1000,
     cells = Array.fromList <| map (\row -> Array.fromList <|
                                            map (\col -> (Cell.init row col)) [0..cols-1])
                               [0..rows-1]
   }
 
-mailbox = Signal.mailbox Update
+mailbox = Signal.mailbox Stop
 
-step : Float -> Model -> Model
-step timestamp game =
-  {game | cells <- Array.map (\row -> Array.map (\cell -> Cell.update (neighbours cell game) cell) row) game.cells}
+-- step : Float -> Model -> Model
+-- step timestamp game =
+--   {game | cells <- Array.map (\row -> Array.map (\cell -> Cell.update (neighbours cell game) cell) row) game.cells}
 
-update : Action -> (Int, Int) -> Model -> Model
-update action (w, h) game =
-  case Debug.watch "action" action of
-    Update -> {game | cells <- Array.map (\row -> Array.map (\cell -> Cell.update (neighbours cell game) cell) row) game.cells}
+update : Updates -> Model -> Model
+update event game =
+  case Debug.watch "event" event of
     Dimensions (width, height) -> {game | w <- width, h <- height}
+    Timestamp _ -> {game | cells <- Array.map (\row -> Array.map (\cell -> Cell.update (neighbours cell game) cell) row) game.cells}
 
 getCell : Model -> Int -> Int -> Maybe Cell.Model
 getCell game x y =
@@ -74,5 +75,10 @@ view game =
                    ]
         ]
 
-gameState = Signal.foldp step (init (gameSize, gameSize)) (every second)
-main = Signal.map view (Signal.map3 update mailbox.signal Window.dimensions gameState)
+updates = Signal.mergeMany [
+           Signal.map UserAction mailbox.signal,
+           Signal.map Dimensions Window.dimensions,
+           Signal.map Timestamp (every second)
+          ]
+gameState = Signal.foldp update (init (gameSize, gameSize)) updates
+main = Signal.map view gameState
