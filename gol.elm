@@ -16,24 +16,6 @@ type Action
 updates : Signal.Mailbox Action
 updates = Signal.mailbox NoOp
 
-cellSizeSlider : String -> Html
-cellSizeSlider cellSize = div
-                          [
-                           Html.Attributes.style [("margin", "10px")]
-                          ]
-
-                          [
-                           label [] [ text "Cell size" ],
-                           input
-                           [Html.Attributes.type' "range",
-                            Html.Attributes.value cellSize,
-                            Html.Attributes.min "5",
-                            Html.Attributes.max "100",
-                            Html.Attributes.step 5,
-                            Html.Events.on "change" Html.Events.targetValue (Signal.send updates CellSize)
-                           ]
-                           []
-                          ]
 
 view : Game.Game -> (Int, Int) -> Action -> Html
 view state (w,h) action =

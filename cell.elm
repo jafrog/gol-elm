@@ -1,8 +1,9 @@
-module Cell (Model, init, Condition, update, view, State) where
+module Cell (Model, init, Condition, update, view, State, flip) where
 
 import Graphics.Collage exposing (rect, filled, outlined, solid, move, Form)
 import Graphics.Input exposing (clickable)
 import Color
+import Debug
 import List exposing (length, filter)
 
 type State = Dead | Alive
@@ -21,13 +22,12 @@ update neighbours model =
                       Reproduction -> Alive
                       Stable -> Alive}
 
-view : Signal.Address State -> Model -> Int -> Form
-view address model size =
+view : Model -> Int -> Form
+view model size =
   rect (toFloat size) (toFloat size) |> filled (case model.state of
-                                                  Dead -> Color.red
+                                                  Dead -> Color.grey
                                                   Alive -> Color.black)
-                                     |> move (toFloat <| (model.x + 1) * size, toFloat <| -(model.y + 1) * size)
-                                     |> clickable (Signal.message address model.state)
+                                     |> move (toFloat <| model.x * size + model.x, toFloat <| -model.y * size - model.y)
 
 condition : List (Maybe Model) -> Condition
 condition neighbours =
@@ -39,3 +39,10 @@ condition neighbours =
      | aliveNeighbours == 2 -> Stable
      | aliveNeighbours > 3 -> Overcrowding
      | aliveNeighbours == 3 -> Reproduction
+
+flip : Maybe Model -> Maybe Model
+flip cell =
+  case cell of
+    Nothing -> Nothing
+    Just cell -> if | cell.state == Dead -> Just {cell | state <- Alive}
+                    | cell.state == Alive -> Just {cell | state <- Dead}
