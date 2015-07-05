@@ -1975,33 +1975,28 @@ Elm.Game.make = function (_elm) {
    $Array = Elm.Array.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Cell = Elm.Cell.make(_elm),
-   $Debug = Elm.Debug.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
-   $Html = Elm.Html.make(_elm),
+   $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $List = Elm.List.make(_elm),
-   $Maybe = Elm.Maybe.make(_elm),
-   $Mouse = Elm.Mouse.make(_elm),
-   $Signal = Elm.Signal.make(_elm),
-   $Time = Elm.Time.make(_elm),
-   $Window = Elm.Window.make(_elm);
-   var cellSize = 10;
-   var view = function (game) {
-      return A2($Html.div,
-      _L.fromArray([]),
-      _L.fromArray([$Html.fromElement(A3($Graphics$Collage.collage,
-      game.w,
-      game.h,
+   $Maybe = Elm.Maybe.make(_elm);
+   var view = F4(function (game,
+   w,
+   h,
+   cellSize) {
+      return A3($Graphics$Collage.collage,
+      w,
+      h,
       _L.fromArray([$Graphics$Collage.move({ctor: "_Tuple2"
-                                           ,_0: (0 - $Basics.toFloat(game.w)) / 2
-                                           ,_1: $Basics.toFloat(game.h) / 2})($Graphics$Collage.group(A2($List.map,
+                                           ,_0: (0 - $Basics.toFloat(w)) / 2 + 10
+                                           ,_1: $Basics.toFloat(h) / 2 - 10})($Graphics$Collage.group(A2($List.map,
       function (cell) {
          return A2($Cell.view,
          cell,
          cellSize);
       },
-      $Array.toList(game.cells))))])))]));
-   };
-   var gameSize = 20;
+      $Array.toList(game.cells))))]));
+   });
+   var cellSize = 10;
    var linearIndex = F3(function (x,
    y,
    game) {
@@ -2013,14 +2008,6 @@ Elm.Game.make = function (_elm) {
       return A2($Array.get,
       A3(linearIndex,x,y,game),
       game.cells);
-   });
-   var findCell = F3(function (game,
-   x,
-   y) {
-      return A3(getCell,
-      game,
-      (x - (game.w / 2 | 0)) / cellSize | 0,
-      (y + (game.h / 2 | 0)) / cellSize | 0);
    });
    var neighbours = F2(function (cell,
    game) {
@@ -2057,84 +2044,179 @@ Elm.Game.make = function (_elm) {
                           cell.x + 1,
                           cell.y + 1)]);
    });
-   var update = F2(function (event,
-   game) {
-      return function () {
-         var _v0 = A2($Debug.watch,
-         "event",
-         event);
-         switch (_v0.ctor)
-         {case "Dimensions":
-            switch (_v0._0.ctor)
-              {case "_Tuple2":
-                 return _U.replace([["w"
-                                    ,_v0._0._0]
-                                   ,["h",_v0._0._1]],
-                   game);}
-              break;
-            case "Flip":
-            switch (_v0._0.ctor)
-              {case "_Tuple2":
-                 return function () {
-                      var cell = $Cell.flip(A3(findCell,
-                      game,
-                      _v0._0._0,
-                      _v0._0._1));
-                      return function () {
-                         switch (cell.ctor)
-                         {case "Just":
-                            return _U.replace([["cells"
-                                               ,A3($Array.set,
-                                               A3(linearIndex,
-                                               cell._0.x,
-                                               cell._0.y,
-                                               game),
-                                               cell._0,
-                                               game.cells)]],
-                              game);
-                            case "Nothing": return game;}
-                         _U.badCase($moduleName,
-                         "between lines 42 and 45");
-                      }();
-                   }();}
-              break;
-            case "Timestamp":
-            return _U.replace([["cells"
-                               ,A2($Array.map,
-                               function (cell) {
-                                  return A2($Cell.update,
-                                  A2(neighbours,cell,game),
-                                  cell);
-                               },
-                               game.cells)]],
-              game);}
-         _U.badCase($moduleName,
-         "between lines 39 and 45");
-      }();
-   });
-   var Model = F6(function (a,
+   var step = function (game) {
+      return _U.replace([["cells"
+                         ,A2($Array.map,
+                         function (cell) {
+                            return A2($Cell.update,
+                            A2(neighbours,cell,game),
+                            cell);
+                         },
+                         game.cells)]],
+      game);
+   };
+   var Model = F4(function (a,
    b,
    c,
-   d,
-   e,
-   f) {
+   d) {
       return {_: {}
              ,cells: a
              ,cols: c
-             ,h: e
              ,rows: b
-             ,state: f
-             ,w: d};
+             ,state: d};
    });
+   var Pause = {ctor: "Pause"};
+   var init = function (_v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2": return {_: {}
+                                 ,cells: A2($Array.initialize,
+                                 _v0._0 * _v0._1,
+                                 function (i) {
+                                    return A2($Cell.init,
+                                    i / _v0._0 | 0,
+                                    A2($Basics.rem,i,_v0._0));
+                                 })
+                                 ,cols: _v0._1
+                                 ,rows: _v0._0
+                                 ,state: Pause};}
+         _U.badCase($moduleName,
+         "between lines 16 and 19");
+      }();
+   };
+   var Play = {ctor: "Play"};
+   _elm.Game.values = {_op: _op
+                      ,view: view
+                      ,getCell: getCell
+                      ,init: init
+                      ,step: step
+                      ,linearIndex: linearIndex
+                      ,Model: Model};
+   return _elm.Game.values;
+};
+Elm.GameView = Elm.GameView || {};
+Elm.GameView.make = function (_elm) {
+   "use strict";
+   _elm.GameView = _elm.GameView || {};
+   if (_elm.GameView.values)
+   return _elm.GameView.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "GameView",
+   $Array = Elm.Array.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Cell = Elm.Cell.make(_elm),
+   $Controls = Elm.Controls.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Game = Elm.Game.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Mouse = Elm.Mouse.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm),
+   $String = Elm.String.make(_elm),
+   $Time = Elm.Time.make(_elm),
+   $Window = Elm.Window.make(_elm);
+   var findCell = F3(function (model,
+   x,
+   y) {
+      return A3($Game.getCell,
+      model.game,
+      (x - (model.w / 2 | 0)) / model.cellSize | 0,
+      (y + (model.h / 2 | 0)) / model.cellSize | 0);
+   });
+   var update = F2(function (event,
+   model) {
+      return function () {
+         var game = model.game;
+         return function () {
+            var _v0 = A2($Debug.watch,
+            "event",
+            event);
+            switch (_v0.ctor)
+            {case "Dimensions":
+               switch (_v0._0.ctor)
+                 {case "_Tuple2":
+                    return _U.replace([["w"
+                                       ,_v0._0._0]
+                                      ,["h",_v0._0._1]],
+                      model);}
+                 break;
+               case "Flip":
+               switch (_v0._0.ctor)
+                 {case "_Tuple2":
+                    return function () {
+                         var cell = $Cell.flip(A3(findCell,
+                         model,
+                         _v0._0._0,
+                         _v0._0._1));
+                         return function () {
+                            switch (cell.ctor)
+                            {case "Just":
+                               return function () {
+                                    var game$ = _U.replace([["cells"
+                                                            ,A3($Array.set,
+                                                            A3($Game.linearIndex,
+                                                            cell._0.x,
+                                                            cell._0.y,
+                                                            game),
+                                                            cell._0,
+                                                            game.cells)]],
+                                    game);
+                                    return _U.replace([["game"
+                                                       ,game$]],
+                                    model);
+                                 }();
+                               case "Nothing": return model;}
+                            _U.badCase($moduleName,
+                            "between lines 34 and 38");
+                         }();
+                      }();}
+                 break;
+               case "Timestamp":
+               return _U.replace([["game"
+                                  ,$Game.step(game)]],
+                 model);
+               case "UserAction":
+               switch (_v0._0.ctor)
+                 {case "CellSize":
+                    return function () {
+                         var size = $String.toInt(_v0._0._0);
+                         return function () {
+                            switch (size.ctor)
+                            {case "Err": return model;
+                               case "Ok":
+                               return _U.replace([["cellSize"
+                                                  ,size._0]],
+                                 model);}
+                            _U.badCase($moduleName,
+                            "between lines 41 and 43");
+                         }();
+                      }();}
+                 break;}
+            _U.badCase($moduleName,
+            "between lines 32 and 43");
+         }();
+      }();
+   });
+   var model = {_: {}
+               ,cellSize: 50
+               ,game: $Game.init({ctor: "_Tuple2"
+                                 ,_0: 20
+                                 ,_1: 20})
+               ,h: 1000
+               ,w: 1000};
+   var Dimensions = function (a) {
+      return {ctor: "Dimensions"
+             ,_0: a};
+   };
    var Flip = function (a) {
       return {ctor: "Flip",_0: a};
    };
    var Timestamp = function (a) {
       return {ctor: "Timestamp"
-             ,_0: a};
-   };
-   var Dimensions = function (a) {
-      return {ctor: "Dimensions"
              ,_0: a};
    };
    var UserAction = function (a) {
@@ -2148,12 +2230,23 @@ Elm.Game.make = function (_elm) {
    var Reset = {ctor: "Reset"};
    var Stop = {ctor: "Stop"};
    var mailbox = $Signal.mailbox(Stop);
+   var view = function (model) {
+      return A2($Html.div,
+      _L.fromArray([]),
+      _L.fromArray([A2($Controls.cellSizeSlider,
+                   A2($Signal.forwardTo,
+                   mailbox.address,
+                   CellSize),
+                   $Basics.toString(model.cellSize))
+                   ,$Html.fromElement(A4($Game.view,
+                   model.game,
+                   model.w,
+                   model.h,
+                   model.cellSize))]));
+   };
    var updates = $Signal.mergeMany(_L.fromArray([A2($Signal.map,
                                                 UserAction,
                                                 mailbox.signal)
-                                                ,A2($Signal.map,
-                                                Dimensions,
-                                                $Window.dimensions)
                                                 ,A2($Signal.map,
                                                 Timestamp,
                                                 $Time.every($Time.second))
@@ -2161,43 +2254,47 @@ Elm.Game.make = function (_elm) {
                                                 Flip,
                                                 A2($Signal.sampleOn,
                                                 $Mouse.clicks,
-                                                $Mouse.position))]));
-   var Start = {ctor: "Start"};
-   var Pause = {ctor: "Pause"};
-   var init = function (_v10) {
-      return function () {
-         switch (_v10.ctor)
-         {case "_Tuple2": return {_: {}
-                                 ,cells: A2($Array.initialize,
-                                 _v10._0 * _v10._1,
-                                 function (i) {
-                                    return A2($Cell.init,
-                                    i / _v10._0 | 0,
-                                    A2($Basics.rem,i,_v10._0));
-                                 })
-                                 ,cols: _v10._1
-                                 ,h: 1000
-                                 ,rows: _v10._0
-                                 ,state: Pause
-                                 ,w: 1000};}
-         _U.badCase($moduleName,
-         "between lines 27 and 32");
-      }();
-   };
-   var gameState = A3($Signal.foldp,
+                                                $Mouse.position))
+                                                ,A2($Signal.map,
+                                                Dimensions,
+                                                $Window.dimensions)]));
+   var viewState = A3($Signal.foldp,
    update,
-   init({ctor: "_Tuple2"
-        ,_0: gameSize
-        ,_1: gameSize}),
+   model,
    updates);
    var main = A2($Signal.map,
    view,
-   gameState);
-   var Play = {ctor: "Play"};
-   _elm.Game.values = {_op: _op
-                      ,view: view
-                      ,Model: Model};
-   return _elm.Game.values;
+   viewState);
+   var Start = {ctor: "Start"};
+   var Model = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,cellSize: c
+             ,game: d
+             ,h: b
+             ,w: a};
+   });
+   _elm.GameView.values = {_op: _op
+                          ,Model: Model
+                          ,Start: Start
+                          ,Stop: Stop
+                          ,Reset: Reset
+                          ,CellSize: CellSize
+                          ,UserAction: UserAction
+                          ,Timestamp: Timestamp
+                          ,Flip: Flip
+                          ,Dimensions: Dimensions
+                          ,mailbox: mailbox
+                          ,model: model
+                          ,findCell: findCell
+                          ,update: update
+                          ,view: view
+                          ,updates: updates
+                          ,viewState: viewState
+                          ,main: main};
+   return _elm.GameView.values;
 };
 Elm.Graphics = Elm.Graphics || {};
 Elm.Graphics.Collage = Elm.Graphics.Collage || {};
