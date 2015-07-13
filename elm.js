@@ -952,8 +952,9 @@ Elm.Controls.make = function (_elm) {
    });
    var btn = F2(function (action,
    address) {
-      return A2($Html.div,
-      _L.fromArray([$Html$Attributes.style(_L.fromArray([{ctor: "_Tuple2"
+      return A2($Html.i,
+      _L.fromArray([$Html$Attributes.$class("fa fa-check")
+                   ,$Html$Attributes.style(_L.fromArray([{ctor: "_Tuple2"
                                                          ,_0: "display"
                                                          ,_1: "inline-block"}
                                                         ,{ctor: "_Tuple2"
