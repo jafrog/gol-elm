@@ -20,7 +20,7 @@ update neighbours model =
                       Underpopulation -> Dead
                       Overcrowding -> Dead
                       Reproduction -> Alive
-                      Stable -> Alive}
+                      Stable -> model.state}
 
 view : Model -> Int -> Form
 view model size =

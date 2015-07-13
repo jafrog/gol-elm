@@ -1,6 +1,7 @@
 module GameView where
 
 import Html exposing (Html, div, fromElement)
+import Html.Attributes
 import String
 import Window
 import Debug
@@ -8,23 +9,26 @@ import Array exposing (Array)
 import Time exposing (every, second)
 import Mouse
 import Graphics.Element exposing (show)
+import Graphics.Collage exposing (collage, move)
 
 import Game exposing (init, step, getCell, linearIndex)
-import Controls exposing (cellSizeSlider)
+import Controls exposing (cellSizeSlider, btn)
 import Cell exposing (Model, flip)
 
 type alias Model = {w: Int, h: Int, cellSize: Int, game: Game.Model}
-type Action = Start | Stop | Reset | CellSize String
+type Action = State String | CellSize String
 type Updates = UserAction Action | Timestamp Float | Flip (Int, Int) | Dimensions (Int, Int)
 
 
-mailbox = Signal.mailbox Stop
+mailbox = Signal.mailbox (State "stop")
 
-model = {w = 1000, h = 1000, cellSize = 50, game = Game.init (20,20)}
+model = {cellSize = 50, game = Game.init (40,40), w = 1000, h = 1000}
 
 findCell : Model -> Int -> Int -> Maybe Cell.Model
 findCell model x y =
-  Game.getCell model.game ((x - model.w // 2) // model.cellSize) ((y + model.h // 2) // model.cellSize)
+  Game.getCell model.game
+               (Debug.watch "cell x" (x // (model.cellSize + 1)))
+               (Debug.watch "cell y" ((y - 50) // (model.cellSize + 1)))
 
 update : Updates -> Model -> Model
 update event model =
@@ -41,13 +45,31 @@ update event model =
                                   case size of
                                     Ok size -> {model | cellSize <- size}
                                     Err msg -> model
+    UserAction (State "play") -> {model | game <- Game.play game}
+    UserAction (State "pause") -> {model | game <- Game.pause game}
+    UserAction (State "restart") -> {model | game <- Game.init (game.rows, game.cols)}
 
-view : Model -> Html
-view model =
+view : Model -> (Int, Int) -> Html
+view model (w, h) =
     div [] [
-         cellSizeSlider (Signal.forwardTo mailbox.address CellSize) (toString model.cellSize),
-         Game.view model.game model.w model.h model.cellSize |> fromElement
-        ]
+           div
+           [
+            Html.Attributes.class "controls",
+            Html.Attributes.style [
+                   ("height", "50px")
+                  ]
+           ]
+           [
+            btn "play" (Signal.forwardTo mailbox.address State),
+            btn "pause" (Signal.forwardTo mailbox.address State),
+            btn "restart" (Signal.forwardTo mailbox.address State),
+            cellSizeSlider (Signal.forwardTo mailbox.address CellSize) (toString model.cellSize)
+           ],
+
+           [Game.view model.game model.cellSize |> move (-(toFloat w)/2 + (toFloat model.cellSize)/2, (toFloat h)/2 - (toFloat model.cellSize)/2)]
+             |> collage w h
+             |> fromElement
+          ]
 
 updates = Signal.mergeMany [
            Signal.map UserAction mailbox.signal,
@@ -57,4 +79,4 @@ updates = Signal.mergeMany [
           ]
 
 viewState = Signal.foldp update model updates
-main = Signal.map view viewState
+main = Signal.map2 view viewState Window.dimensions

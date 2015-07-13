@@ -1,9 +1,9 @@
-module Game (view, Model, getCell, init, step, linearIndex) where
+module Game (view, Model, getCell, init, step, linearIndex, play, pause) where
 
 import List exposing (map, any, length, filter, concatMap)
-import Graphics.Collage exposing (collage, group, move)
-import Graphics.Element exposing (Element)
+import Graphics.Collage exposing (group, Form)
 import Array exposing (Array)
+import Debug
 
 import Cell
 
@@ -19,12 +19,22 @@ init (rows, cols) =
     state = Pause
   }
 
+play : Model -> Model
+play game =
+  {game | state <- Play}
+
+pause : Model -> Model
+pause game =
+  {game | state <- Pause}
+
 step : Model -> Model
-step game = {game | cells <- Array.map (\cell -> Cell.update (neighbours cell game) cell) game.cells}
-  
+step game = if game.state == Play
+            then {game | cells <- Array.map (\cell -> Cell.update (neighbours cell game) cell) game.cells}
+            else game
+
 linearIndex : Int -> Int -> Model -> Int
 linearIndex x y game =
-  x * game.rows + y * game.cols
+  Debug.watch "linearIndex" <| x * game.rows + y
 
 getCell : Model -> Int -> Int -> Maybe Cell.Model
 getCell game x y =
@@ -43,9 +53,6 @@ neighbours cell game =
    getCell game (cell.x + 1) (cell.y + 1)
   ]
 
-cellSize = 10
-
-view : Model -> Int -> Int -> Int -> Element
-view game w h cellSize =
-  collage w h [
-             group (map (\cell -> (Cell.view cell cellSize)) (Array.toList game.cells)) |> move (-(toFloat w)/2 + 10, (toFloat h)/2 - 10)]
+view : Model -> Int -> Form
+view game cellSize =
+  group (map (\cell -> (Cell.view cell cellSize)) (Array.toList game.cells))

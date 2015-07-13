@@ -1,14 +1,34 @@
-module Controls (cellSizeSlider) where
+module Controls (cellSizeSlider, btn) where
 
-import Html exposing (div, label, input, text, Html)
+import Html exposing (div, label, input, text, Html, fromElement)
 import Html.Events exposing (on, targetValue)
 import Html.Attributes
+import Graphics.Element exposing (Element, image, width)
+import Graphics.Input exposing (clickable)
+import String
+
+btn : String -> Signal.Address String -> Html
+btn action address =
+  div
+  [
+   Html.Attributes.style [
+          ("display", "inline-block"),
+          ("margin", "10px 10px 0 10px")
+         ]
+  ]
+
+  [
+   image 30 30 (String.concat ["./", action, ".png"]) |>
+   clickable (Signal.message address action) |>
+   fromElement
+  ]
 
 cellSizeSlider : Signal.Address String -> String -> Html
 cellSizeSlider address cellSize =
   div
   [
-   Html.Attributes.style [("margin", "10px")]
+   Html.Attributes.style [("margin", "10px"),
+                          ("display", "inline-block")]
   ]
 
   [
