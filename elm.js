@@ -2148,6 +2148,7 @@ Elm.GameView.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Mouse = Elm.Mouse.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $Signal$Extra = Elm.Signal.Extra.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
    var updateCellSize = F2(function (model,
@@ -2158,10 +2159,10 @@ Elm.GameView.make = function (_elm) {
          model.cellSize + diff);
          var rows = A2($Debug.watch,
          "new rows",
-         model.w / cellSize | 0);
+         model.h / cellSize | 0);
          var cols = A2($Debug.watch,
          "new cols",
-         model.h / cellSize | 0);
+         model.w / cellSize | 0);
          return _U.cmp(cellSize,
          5) > -1 && _U.cmp(cellSize,
          100) < 1 ? _U.replace([["game"
@@ -2186,10 +2187,16 @@ Elm.GameView.make = function (_elm) {
       return function () {
          var game = model.game;
          return function () {
-            switch (event.ctor)
-            {case "Action":
-               switch (event._0)
-                 {case "pause":
+            var _v0 = A2($Debug.watch,
+            "event",
+            event);
+            switch (_v0.ctor)
+            {case "Action": switch (_v0._0)
+                 {case "minus":
+                    return A2(updateCellSize,
+                      model,
+                      -5);
+                    case "pause":
                     return _U.replace([["game"
                                        ,$Game.pause(game)]],
                       model);
@@ -2197,11 +2204,7 @@ Elm.GameView.make = function (_elm) {
                     return _U.replace([["game"
                                        ,$Game.play(game)]],
                       model);
-                    case "search-minus":
-                    return A2(updateCellSize,
-                      model,
-                      -5);
-                    case "search-plus":
+                    case "plus":
                     return A2(updateCellSize,
                       model,
                       5);
@@ -2213,21 +2216,21 @@ Elm.GameView.make = function (_elm) {
                       model);}
                  break;
                case "Dimensions":
-               switch (event._0.ctor)
+               switch (_v0._0.ctor)
                  {case "_Tuple2":
                     return _U.replace([["w"
-                                       ,event._0._0]
-                                      ,["h",event._0._1]],
+                                       ,_v0._0._0]
+                                      ,["h",_v0._0._1]],
                       model);}
                  break;
                case "Flip":
-               switch (event._0.ctor)
+               switch (_v0._0.ctor)
                  {case "_Tuple2":
                     return function () {
                          var cell = $Cell.flip(A3(findCell,
                          model,
-                         event._0._0,
-                         event._0._1));
+                         _v0._0._0,
+                         _v0._0._1));
                          return function () {
                             switch (cell.ctor)
                             {case "Just":
@@ -2247,7 +2250,7 @@ Elm.GameView.make = function (_elm) {
                                  }();
                                case "Nothing": return model;}
                             _U.badCase($moduleName,
-                            "between lines 37 and 41");
+                            "between lines 42 and 46");
                          }();
                       }();}
                  break;
@@ -2256,22 +2259,32 @@ Elm.GameView.make = function (_elm) {
                                   ,$Game.step(game)]],
                  model);}
             _U.badCase($moduleName,
-            "between lines 35 and 47");
+            "between lines 40 and 52");
          }();
       }();
    });
-   var model = {_: {}
-               ,cellSize: 50
-               ,game: $Game.init({ctor: "_Tuple2"
-                                 ,_0: 20
-                                 ,_1: 20})
-               ,h: 500
-               ,w: 500};
+   var init = function (update) {
+      return function () {
+         switch (update.ctor)
+         {case "Dimensions":
+            switch (update._0.ctor)
+              {case "_Tuple2": return {_: {}
+                                      ,cellSize: 50
+                                      ,game: $Game.init({ctor: "_Tuple2"
+                                                        ,_0: (update._0._1 / 50 | 0) + 1
+                                                        ,_1: (update._0._0 / 50 | 0) + 1})
+                                      ,h: update._0._1
+                                      ,w: update._0._0};}
+              break;}
+         _U.badCase($moduleName,
+         "between lines 28 and 29");
+      }();
+   };
    var mailbox = $Signal.mailbox("stop");
    var view = F2(function (model,
-   _v11) {
+   _v15) {
       return function () {
-         switch (_v11.ctor)
+         switch (_v15.ctor)
          {case "_Tuple2":
             return A2($Html.div,
               _L.fromArray([]),
@@ -2296,14 +2309,14 @@ Elm.GameView.make = function (_elm) {
                                         "plus",
                                         mailbox.address)]))
                            ,$Html.fromElement(A2($Graphics$Collage.collage,
-                           _v11._0,
-                           _v11._1)(_L.fromArray([$Graphics$Collage.move({ctor: "_Tuple2"
-                                                                         ,_0: (0 - $Basics.toFloat(_v11._0)) / 2 + $Basics.toFloat(model.cellSize) / 2
-                                                                         ,_1: $Basics.toFloat(_v11._1) / 2 - $Basics.toFloat(model.cellSize) / 2})(A2($Game.view,
+                           _v15._0,
+                           _v15._1)(_L.fromArray([$Graphics$Collage.move({ctor: "_Tuple2"
+                                                                         ,_0: (0 - $Basics.toFloat(_v15._0)) / 2 + $Basics.toFloat(model.cellSize) / 2
+                                                                         ,_1: $Basics.toFloat(_v15._1) / 2 - $Basics.toFloat(model.cellSize) / 2})(A2($Game.view,
                            model.game,
                            model.cellSize))])))]));}
          _U.badCase($moduleName,
-         "between lines 61 and 80");
+         "between lines 66 and 85");
       }();
    });
    var Dimensions = function (a) {
@@ -2321,27 +2334,28 @@ Elm.GameView.make = function (_elm) {
       return {ctor: "Action"
              ,_0: a};
    };
-   var updates = $Signal.mergeMany(_L.fromArray([A2($Signal.map,
+   var updates = $Signal.mergeMany(_L.fromArray([A2($Signal._op["<~"],
+                                                Dimensions,
+                                                $Window.dimensions)
+                                                ,A2($Signal._op["<~"],
                                                 Action,
                                                 mailbox.signal)
-                                                ,A2($Signal.map,
+                                                ,A2($Signal._op["<~"],
                                                 Timestamp,
                                                 $Time.every($Time.second))
-                                                ,A2($Signal.map,
+                                                ,A2($Signal._op["<~"],
                                                 Flip,
                                                 A2($Signal.sampleOn,
                                                 $Mouse.clicks,
-                                                $Mouse.position))
-                                                ,A2($Signal.map,
-                                                Dimensions,
-                                                $Window.dimensions)]));
-   var viewState = A3($Signal.foldp,
+                                                $Mouse.position))]));
+   var viewState = A3($Signal$Extra.foldp$,
    update,
-   model,
+   init,
    updates);
-   var main = A3($Signal.map2,
+   var main = A2($Signal._op["~"],
+   A2($Signal._op["<~"],
    view,
-   viewState,
+   viewState),
    $Window.dimensions);
    var Model = F4(function (a,
    b,
@@ -2360,7 +2374,7 @@ Elm.GameView.make = function (_elm) {
                           ,Flip: Flip
                           ,Dimensions: Dimensions
                           ,mailbox: mailbox
-                          ,model: model
+                          ,init: init
                           ,findCell: findCell
                           ,update: update
                           ,updateCellSize: updateCellSize
@@ -14013,6 +14027,499 @@ Elm.Signal.make = function (_elm) {
                         ,forwardTo: forwardTo
                         ,Mailbox: Mailbox};
    return _elm.Signal.values;
+};
+Elm.Signal = Elm.Signal || {};
+Elm.Signal.Extra = Elm.Signal.Extra || {};
+Elm.Signal.Extra.make = function (_elm) {
+   "use strict";
+   _elm.Signal = _elm.Signal || {};
+   _elm.Signal.Extra = _elm.Signal.Extra || {};
+   if (_elm.Signal.Extra.values)
+   return _elm.Signal.Extra.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Signal.Extra",
+   $Basics = Elm.Basics.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var combine = A2($List.foldr,
+   $Signal.map2(F2(function (x,y) {
+      return A2($List._op["::"],
+      x,
+      y);
+   })),
+   $Signal.constant(_L.fromArray([])));
+   var mapMany = F2(function (f,
+   l) {
+      return A2($Signal._op["<~"],
+      f,
+      combine(l));
+   });
+   var applyMany = F2(function (fs,
+   l) {
+      return A2($Signal._op["~"],
+      fs,
+      combine(l));
+   });
+   var filter = function (initial) {
+      return A2($Signal.filterMap,
+      $Basics.identity,
+      initial);
+   };
+   var keepIf = $Signal.filter;
+   var runBuffer$ = F3(function (l,
+   n,
+   input) {
+      return function () {
+         var f = F2(function (inp,
+         prev) {
+            return function () {
+               var l = $List.length(prev);
+               return _U.cmp(l,
+               n) < 0 ? A2($Basics._op["++"],
+               prev,
+               _L.fromArray([inp])) : A2($Basics._op["++"],
+               A2($List.drop,l - n + 1,prev),
+               _L.fromArray([inp]));
+            }();
+         });
+         return A3($Signal.foldp,
+         f,
+         l,
+         input);
+      }();
+   });
+   var runBuffer = runBuffer$(_L.fromArray([]));
+   var foldps = F3(function (f,
+   bs,
+   aS) {
+      return A2($Signal._op["<~"],
+      $Basics.fst,
+      A3($Signal.foldp,
+      F2(function (a,_v0) {
+         return function () {
+            switch (_v0.ctor)
+            {case "_Tuple2": return A2(f,
+                 a,
+                 _v0._1);}
+            _U.badCase($moduleName,
+            "on line 120, column 29 to 34");
+         }();
+      }),
+      bs,
+      aS));
+   });
+   var delayRound = F2(function (b,
+   bS) {
+      return A3(foldps,
+      F2(function ($new,old) {
+         return {ctor: "_Tuple2"
+                ,_0: old
+                ,_1: $new};
+      }),
+      {ctor: "_Tuple2",_0: b,_1: b},
+      bS);
+   });
+   var filterFold = F2(function (f,
+   initial) {
+      return function () {
+         var f$ = F2(function (a,s) {
+            return function () {
+               var res = A2(f,a,s);
+               return {ctor: "_Tuple2"
+                      ,_0: res
+                      ,_1: A2($Maybe.withDefault,
+                      s,
+                      res)};
+            }();
+         });
+         return function ($) {
+            return filter(initial)(A2(foldps,
+            f$,
+            {ctor: "_Tuple2"
+            ,_0: $Maybe.Just(initial)
+            ,_1: initial})($));
+         };
+      }();
+   });
+   var initSignal = function (s) {
+      return A2($Signal.sampleOn,
+      $Signal.constant({ctor: "_Tuple0"}),
+      s);
+   };
+   var switchHelper = F4(function (filter,
+   b,
+   l,
+   r) {
+      return function () {
+         var fromJust = function (_v4) {
+            return function () {
+               switch (_v4.ctor)
+               {case "Just": return _v4._0;}
+               _U.badCase($moduleName,
+               "on line 211, column 25 to 26");
+            }();
+         };
+         var lAndR = A2($Signal.merge,
+         A3(filter,
+         b,
+         $Maybe.Nothing,
+         A2($Signal._op["<~"],
+         $Maybe.Just,
+         l)),
+         A3(filter,
+         A2($Signal._op["<~"],
+         $Basics.not,
+         b),
+         $Maybe.Nothing,
+         A2($Signal._op["<~"],
+         $Maybe.Just,
+         r)));
+         var base = A2($Signal._op["~"],
+         A2($Signal._op["~"],
+         A2($Signal._op["<~"],
+         F3(function (bi,li,ri) {
+            return $Maybe.Just(bi ? li : ri);
+         }),
+         initSignal(b)),
+         initSignal(l)),
+         initSignal(r));
+         return A2($Signal._op["<~"],
+         fromJust,
+         A2($Signal.merge,base,lAndR));
+      }();
+   });
+   var unzip4 = function (pairS) {
+      return {ctor: "_Tuple4"
+             ,_0: A2($Signal._op["<~"],
+             function (_v7) {
+                return function () {
+                   switch (_v7.ctor)
+                   {case "_Tuple4": return _v7._0;}
+                   _U.badCase($moduleName,
+                   "on line 80, column 19 to 20");
+                }();
+             },
+             pairS)
+             ,_1: A2($Signal._op["<~"],
+             function (_v13) {
+                return function () {
+                   switch (_v13.ctor)
+                   {case "_Tuple4":
+                      return _v13._1;}
+                   _U.badCase($moduleName,
+                   "on line 80, column 47 to 48");
+                }();
+             },
+             pairS)
+             ,_2: A2($Signal._op["<~"],
+             function (_v19) {
+                return function () {
+                   switch (_v19.ctor)
+                   {case "_Tuple4":
+                      return _v19._2;}
+                   _U.badCase($moduleName,
+                   "on line 80, column 75 to 76");
+                }();
+             },
+             pairS)
+             ,_3: A2($Signal._op["<~"],
+             function (_v25) {
+                return function () {
+                   switch (_v25.ctor)
+                   {case "_Tuple4":
+                      return _v25._3;}
+                   _U.badCase($moduleName,
+                   "on line 80, column 103 to 104");
+                }();
+             },
+             pairS)};
+   };
+   var unzip3 = function (pairS) {
+      return {ctor: "_Tuple3"
+             ,_0: A2($Signal._op["<~"],
+             function (_v31) {
+                return function () {
+                   switch (_v31.ctor)
+                   {case "_Tuple3":
+                      return _v31._0;}
+                   _U.badCase($moduleName,
+                   "on line 74, column 17 to 18");
+                }();
+             },
+             pairS)
+             ,_1: A2($Signal._op["<~"],
+             function (_v36) {
+                return function () {
+                   switch (_v36.ctor)
+                   {case "_Tuple3":
+                      return _v36._1;}
+                   _U.badCase($moduleName,
+                   "on line 74, column 43 to 44");
+                }();
+             },
+             pairS)
+             ,_2: A2($Signal._op["<~"],
+             function (_v41) {
+                return function () {
+                   switch (_v41.ctor)
+                   {case "_Tuple3":
+                      return _v41._2;}
+                   _U.badCase($moduleName,
+                   "on line 74, column 69 to 70");
+                }();
+             },
+             pairS)};
+   };
+   var unzip = function (pairS) {
+      return {ctor: "_Tuple2"
+             ,_0: A2($Signal._op["<~"],
+             $Basics.fst,
+             pairS)
+             ,_1: A2($Signal._op["<~"],
+             $Basics.snd,
+             pairS)};
+   };
+   var zip4 = $Signal.map4(F4(function (v0,
+   v1,
+   v2,
+   v3) {
+      return {ctor: "_Tuple4"
+             ,_0: v0
+             ,_1: v1
+             ,_2: v2
+             ,_3: v3};
+   }));
+   var zip3 = $Signal.map3(F3(function (v0,
+   v1,
+   v2) {
+      return {ctor: "_Tuple3"
+             ,_0: v0
+             ,_1: v1
+             ,_2: v2};
+   }));
+   var zip = $Signal.map2(F2(function (v0,
+   v1) {
+      return {ctor: "_Tuple2"
+             ,_0: v0
+             ,_1: v1};
+   }));
+   var keepWhen = F3(function (boolSig,
+   a,
+   aSig) {
+      return $Signal.map($Basics.snd)(A2(keepIf,
+      $Basics.fst,
+      {ctor: "_Tuple2"
+      ,_0: true
+      ,_1: a})($Signal.sampleOn(aSig)(A2(zip,
+      boolSig,
+      aSig))));
+   });
+   var switchWhen = F3(function (b,
+   l,
+   r) {
+      return A4(switchHelper,
+      keepWhen,
+      b,
+      l,
+      r);
+   });
+   var sampleWhen = F3(function (bs,
+   def,
+   sig) {
+      return $Signal.map($Basics.snd)(A2(keepIf,
+      $Basics.fst,
+      {ctor: "_Tuple2"
+      ,_0: true
+      ,_1: def})(A2(zip,bs,sig)));
+   });
+   var switchSample = F3(function (b,
+   l,
+   r) {
+      return A4(switchHelper,
+      sampleWhen,
+      b,
+      l,
+      r);
+   });
+   var keepThen = F3(function (choice,
+   base,
+   signal) {
+      return A2(switchSample,
+      choice,
+      signal)($Signal.constant(base));
+   });
+   _op["~>"] = $Basics.flip($Signal.map);
+   var foldp$ = F3(function (fun,
+   initFun,
+   input) {
+      return function () {
+         var fromJust = function (_v46) {
+            return function () {
+               switch (_v46.ctor)
+               {case "Just": return _v46._0;}
+               _U.badCase($moduleName,
+               "on line 107, column 25 to 26");
+            }();
+         };
+         var fun$ = F2(function (_v49,
+         mb) {
+            return function () {
+               switch (_v49.ctor)
+               {case "_Tuple2":
+                  return $Maybe.Just(fun(_v49._0)(A2($Maybe.withDefault,
+                    _v49._1,
+                    mb)));}
+               _U.badCase($moduleName,
+               "between lines 104 and 105");
+            }();
+         });
+         var initial = A2(_op["~>"],
+         initSignal(input),
+         initFun);
+         var rest = A3($Signal.foldp,
+         fun$,
+         $Maybe.Nothing,
+         A2(zip,input,initial));
+         return A2($Signal._op["<~"],
+         fromJust,
+         A2($Signal.merge,
+         A2($Signal._op["<~"],
+         $Maybe.Just,
+         initial),
+         rest));
+      }();
+   });
+   var foldps$ = F3(function (f,
+   iF,
+   aS) {
+      return A2($Signal._op["<~"],
+      $Basics.fst,
+      A3(foldp$,
+      F2(function (a,_v53) {
+         return function () {
+            switch (_v53.ctor)
+            {case "_Tuple2": return A2(f,
+                 a,
+                 _v53._1);}
+            _U.badCase($moduleName,
+            "on line 126, column 46 to 51");
+         }();
+      }),
+      iF,
+      aS));
+   });
+   var foldpWith = F4(function (unpack,
+   step,
+   init,
+   input) {
+      return function () {
+         var step$ = F2(function (a,
+         _v57) {
+            return function () {
+               switch (_v57.ctor)
+               {case "_Tuple2":
+                  return unpack(A2(step,
+                    a,
+                    _v57._1));}
+               _U.badCase($moduleName,
+               "on line 140, column 7 to 25");
+            }();
+         });
+         return A2(_op["~>"],
+         A3($Signal.foldp,
+         step$,
+         init,
+         input),
+         $Basics.fst);
+      }();
+   });
+   var keepWhenI = F2(function (fs,
+   s) {
+      return function () {
+         var fromJust = function (_v61) {
+            return function () {
+               switch (_v61.ctor)
+               {case "Just": return _v61._0;}
+               _U.badCase($moduleName,
+               "on line 257, column 25 to 26");
+            }();
+         };
+         return A2(_op["~>"],
+         A3(keepWhen,
+         A2($Signal.merge,
+         $Signal.constant(true),
+         fs),
+         $Maybe.Nothing,
+         A2($Signal._op["<~"],
+         $Maybe.Just,
+         s)),
+         fromJust);
+      }();
+   });
+   var fairMerge = F3(function (resolve,
+   left,
+   right) {
+      return function () {
+         var merged = A2($Signal.merge,
+         left,
+         right);
+         var boolRight = A2($Signal._op["<~"],
+         $Basics.always(false),
+         right);
+         var boolLeft = A2($Signal._op["<~"],
+         $Basics.always(true),
+         left);
+         var bothUpdated = A2($Signal._op["~"],
+         A2($Signal._op["<~"],
+         F2(function (x,y) {
+            return !_U.eq(x,y);
+         }),
+         A2($Signal.merge,
+         boolLeft,
+         boolRight)),
+         A2($Signal.merge,
+         boolRight,
+         boolLeft));
+         var keep = keepWhenI(bothUpdated);
+         var resolved = A2($Signal._op["~"],
+         A2($Signal._op["<~"],
+         resolve,
+         keep(left)),
+         keep(right));
+         return $Signal.merge(resolved)(merged);
+      }();
+   });
+   _elm.Signal.Extra.values = {_op: _op
+                              ,zip: zip
+                              ,zip3: zip3
+                              ,zip4: zip4
+                              ,unzip: unzip
+                              ,unzip3: unzip3
+                              ,unzip4: unzip4
+                              ,foldp$: foldp$
+                              ,foldps: foldps
+                              ,foldps$: foldps$
+                              ,runBuffer: runBuffer
+                              ,runBuffer$: runBuffer$
+                              ,delayRound: delayRound
+                              ,keepIf: keepIf
+                              ,keepWhen: keepWhen
+                              ,sampleWhen: sampleWhen
+                              ,switchWhen: switchWhen
+                              ,keepWhenI: keepWhenI
+                              ,switchSample: switchSample
+                              ,keepThen: keepThen
+                              ,filter: filter
+                              ,filterFold: filterFold
+                              ,fairMerge: fairMerge
+                              ,combine: combine
+                              ,mapMany: mapMany
+                              ,applyMany: applyMany};
+   return _elm.Signal.Extra.values;
 };
 Elm.String = Elm.String || {};
 Elm.String.make = function (_elm) {

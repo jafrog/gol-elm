@@ -10,6 +10,8 @@ import Time exposing (every, second)
 import Mouse
 import Graphics.Element exposing (show)
 import Graphics.Collage exposing (collage, move)
+import Signal exposing (..)
+import Signal.Extra exposing (foldp')
 
 import Game exposing (init, step, getCell, linearIndex, adjust)
 import Controls exposing (btn)
@@ -21,7 +23,10 @@ type Updates = Action String | Timestamp Float | Flip (Int, Int) | Dimensions (I
 
 mailbox = Signal.mailbox "stop"
 
-model = {cellSize = 50, game = Game.init (20,20), w = 500, h = 500}
+init : Updates -> Model
+init update =
+  case update of
+    Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 50) + 1, (w // 50) + 1)}
 
 findCell : Model -> Int -> Int -> Maybe Cell.Model
 findCell model x y =
@@ -32,7 +37,7 @@ findCell model x y =
 update : Updates -> Model -> Model
 update event model =
   let game = model.game in
-  case event of
+  case Debug.watch "event" event of
     Flip (x, y) -> let cell = Cell.flip (findCell model x y) in
                    case cell of
                      Nothing -> model
@@ -43,17 +48,17 @@ update event model =
     Action "play" -> {model | game <- Game.play game}
     Action "pause" -> {model | game <- Game.pause game}
     Action "undo" -> {model | game <- Game.init (game.rows, game.cols)}
-    Action "search-minus" -> updateCellSize model -5
-    Action "search-plus" -> updateCellSize model 5
+    Action "minus" -> updateCellSize model -5
+    Action "plus" -> updateCellSize model 5
 
 updateCellSize : Model -> Int -> Model
 updateCellSize model diff =
   let cellSize = Debug.watch "new cellSize" (model.cellSize + diff)
-      rows = Debug.watch "new rows" (model.w // cellSize)
-      cols = Debug.watch "new cols" (model.h // cellSize) in
+      rows = Debug.watch "new rows" (model.h // cellSize)
+      cols = Debug.watch "new cols" (model.w // cellSize) in
   if cellSize >= 5 && cellSize <= 100
   then {model | game <- Game.adjust model.game rows cols,
-                        cellSize <- cellSize}
+                cellSize <- cellSize}
   else model
 
 view : Model -> (Int, Int) -> Html
@@ -80,11 +85,11 @@ view model (w, h) =
           ]
 
 updates = Signal.mergeMany [
-           Signal.map Action mailbox.signal,
-           Signal.map Timestamp (every second),
-           Signal.map Flip (Signal.sampleOn Mouse.clicks Mouse.position),
-           Signal.map Dimensions Window.dimensions
+           Dimensions <~ Window.dimensions,
+           Action <~ mailbox.signal,
+           Timestamp <~ (every second),
+           Flip <~ (Signal.sampleOn Mouse.clicks Mouse.position)
           ]
 
-viewState = Signal.foldp update model updates
-main = Signal.map2 view viewState Window.dimensions
+viewState = foldp' update init updates
+main = view <~ viewState ~ Window.dimensions
