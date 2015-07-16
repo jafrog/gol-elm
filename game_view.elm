@@ -11,29 +11,28 @@ import Mouse
 import Graphics.Element exposing (show)
 import Graphics.Collage exposing (collage, move)
 
-import Game exposing (init, step, getCell, linearIndex)
-import Controls exposing (cellSizeSlider, btn)
+import Game exposing (init, step, getCell, linearIndex, adjust)
+import Controls exposing (btn)
 import Cell exposing (Model, flip)
 
 type alias Model = {w: Int, h: Int, cellSize: Int, game: Game.Model}
-type Action = State String | CellSize String
-type Updates = UserAction Action | Timestamp Float | Flip (Int, Int) | Dimensions (Int, Int)
+type Updates = Action String | Timestamp Float | Flip (Int, Int) | Dimensions (Int, Int)
 
 
-mailbox = Signal.mailbox (State "stop")
+mailbox = Signal.mailbox "stop"
 
-model = {cellSize = 50, game = Game.init (40,40), w = 1000, h = 1000}
+model = {cellSize = 50, game = Game.init (20,20), w = 500, h = 500}
 
 findCell : Model -> Int -> Int -> Maybe Cell.Model
 findCell model x y =
   Game.getCell model.game
-               (Debug.watch "cell x" (x // (model.cellSize + 1)))
-               (Debug.watch "cell y" ((y - 50) // (model.cellSize + 1)))
+               (x // (model.cellSize + 1))
+               ((y - 50) // (model.cellSize + 1))
 
 update : Updates -> Model -> Model
 update event model =
   let game = model.game in
-  case Debug.watch "event" event of
+  case event of
     Flip (x, y) -> let cell = Cell.flip (findCell model x y) in
                    case cell of
                      Nothing -> model
@@ -41,13 +40,21 @@ update event model =
                                   {model | game <- game'}
     Timestamp _ -> {model | game <- Game.step game}
     Dimensions (w,h) -> {model | w <- w, h <- h}
-    UserAction (CellSize sizeStr) -> let size = String.toInt sizeStr in
-                                  case size of
-                                    Ok size -> {model | cellSize <- size}
-                                    Err msg -> model
-    UserAction (State "play") -> {model | game <- Game.play game}
-    UserAction (State "pause") -> {model | game <- Game.pause game}
-    UserAction (State "restart") -> {model | game <- Game.init (game.rows, game.cols)}
+    Action "play" -> {model | game <- Game.play game}
+    Action "pause" -> {model | game <- Game.pause game}
+    Action "undo" -> {model | game <- Game.init (game.rows, game.cols)}
+    Action "search-minus" -> updateCellSize model -5
+    Action "search-plus" -> updateCellSize model 5
+
+updateCellSize : Model -> Int -> Model
+updateCellSize model diff =
+  let cellSize = Debug.watch "new cellSize" (model.cellSize + diff)
+      rows = Debug.watch "new rows" (model.w // cellSize)
+      cols = Debug.watch "new cols" (model.h // cellSize) in
+  if cellSize >= 5 && cellSize <= 100
+  then {model | game <- Game.adjust model.game rows cols,
+                        cellSize <- cellSize}
+  else model
 
 view : Model -> (Int, Int) -> Html
 view model (w, h) =
@@ -60,10 +67,11 @@ view model (w, h) =
                   ]
            ]
            [
-            btn "play" (Signal.forwardTo mailbox.address State),
-            btn "pause" (Signal.forwardTo mailbox.address State),
-            btn "restart" (Signal.forwardTo mailbox.address State),
-            cellSizeSlider (Signal.forwardTo mailbox.address CellSize) (toString model.cellSize)
+            btn "minus" mailbox.address,
+            btn "play" mailbox.address,
+            btn "pause" mailbox.address,
+            btn "undo" mailbox.address,
+            btn "plus" mailbox.address
            ],
 
            [Game.view model.game model.cellSize |> move (-(toFloat w)/2 + (toFloat model.cellSize)/2, (toFloat h)/2 - (toFloat model.cellSize)/2)]
@@ -72,7 +80,7 @@ view model (w, h) =
           ]
 
 updates = Signal.mergeMany [
-           Signal.map UserAction mailbox.signal,
+           Signal.map Action mailbox.signal,
            Signal.map Timestamp (every second),
            Signal.map Flip (Signal.sampleOn Mouse.clicks Mouse.position),
            Signal.map Dimensions Window.dimensions
