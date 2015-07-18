@@ -4,7 +4,6 @@ import Html exposing (Html, div, fromElement)
 import Html.Attributes
 import String
 import Window
-import Debug
 import Array exposing (Array)
 import Time exposing (every, second)
 import Mouse
@@ -13,7 +12,7 @@ import Graphics.Collage exposing (collage, move)
 import Signal exposing (..)
 import Signal.Extra exposing (foldp')
 
-import Game exposing (init, step, getCell, linearIndex, adjust)
+import Game exposing (init, step, getCell, linearIndex)
 import Controls exposing (btn)
 import Cell exposing (Model, flip)
 
@@ -26,18 +25,21 @@ mailbox = Signal.mailbox "stop"
 init : Updates -> Model
 init update =
   case update of
-    Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 50) + 1, (w // 50) + 1)}
+    Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 20) + 1, (w // 20) + 1)}
+-- init = {w = 1000, h = 1000, cellSize = 50, game = Game.init(40,40)}
 
 findCell : Model -> Int -> Int -> Maybe Cell.Model
 findCell model x y =
-  Game.getCell model.game
-               (x // (model.cellSize + 1))
-               ((y - 50) // (model.cellSize + 1))
+  if y < 50
+  then Nothing
+  else Game.getCell model.game
+                    (x // (model.cellSize + 1))
+                    ((y - 50) // (model.cellSize + 1))
 
 update : Updates -> Model -> Model
 update event model =
   let game = model.game in
-  case Debug.watch "event" event of
+  case event of
     Flip (x, y) -> let cell = Cell.flip (findCell model x y) in
                    case cell of
                      Nothing -> model
@@ -53,12 +55,9 @@ update event model =
 
 updateCellSize : Model -> Int -> Model
 updateCellSize model diff =
-  let cellSize = Debug.watch "new cellSize" (model.cellSize + diff)
-      rows = Debug.watch "new rows" (model.h // cellSize)
-      cols = Debug.watch "new cols" (model.w // cellSize) in
-  if cellSize >= 5 && cellSize <= 100
-  then {model | game <- Game.adjust model.game rows cols,
-                cellSize <- cellSize}
+  let cellSize = (model.cellSize + diff) in
+  if cellSize >= 20 && cellSize <= 100
+  then {model | cellSize <- cellSize}
   else model
 
 view : Model -> (Int, Int) -> Html

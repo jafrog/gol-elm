@@ -1,9 +1,8 @@
-module Game (view, Model, getCell, init, step, linearIndex, play, pause, adjust) where
+module Game (view, Model, getCell, init, step, linearIndex, play, pause) where
 
 import List exposing (map, any, length, filter, concatMap)
 import Graphics.Collage exposing (group, Form)
 import Array exposing (Array)
-import Debug
 
 import Cell
 
@@ -32,19 +31,9 @@ step game = if game.state == Play
             then {game | cells <- Array.map (\cell -> Cell.update (neighbours cell game) cell) game.cells}
             else game
 
-adjust : Model -> Int -> Int -> Model
-adjust game rows cols =
-  let size = Debug.watch "size" (game.rows * game.cols)
-      newSize = Debug.watch "newSize" (rows * cols) in
-  {game | rows <- rows,
-          cols <- cols,
-          cells <- if newSize > size
-                   then Array.append game.cells (Array.initialize (newSize - size) (\i -> Cell.init (i // rows + rows) (i `rem` rows + cols)))
-                   else Array.slice 0 newSize game.cells}
-
 linearIndex : Int -> Int -> Model -> Int
 linearIndex x y game =
-  Debug.watch "linearIndex" <| x * game.rows + y
+  x * game.rows + y
 
 getCell : Model -> Int -> Int -> Maybe Cell.Model
 getCell game x y =

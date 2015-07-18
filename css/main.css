@@ -1,0 +1,16 @@
+.controls {
+  max-height: 50px;
+  height: 50px;
+  text-align: center;
+}
+
+i.fa {
+  margin: 5px 20px;
+  font-size: 30px;
+  color: #999;
+}
+
+i.fa:hover {
+  color: black;
+  
+}
