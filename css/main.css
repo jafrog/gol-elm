@@ -12,5 +12,11 @@ i.fa {
 
 i.fa:hover {
   color: black;
-  
+}
+
+i.fa.fa-github {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: 24px;
 }
