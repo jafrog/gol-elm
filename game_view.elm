@@ -19,7 +19,6 @@ import Cell exposing (Model, flip)
 type alias Model = {w: Int, h: Int, cellSize: Int, game: Game.Model}
 type Updates = Action String | Timestamp Float | Flip (Int, Int) | Dimensions (Int, Int)
 
-
 mailbox = Signal.mailbox "stop"
 
 init : Updates -> Model
