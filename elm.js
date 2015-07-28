@@ -289,8 +289,8 @@ Elm.Cell.make = function (_elm) {
    var view = F2(function (model,
    size) {
       return $Graphics$Collage.move({ctor: "_Tuple2"
-                                    ,_0: $Basics.toFloat(model.x * size + model.x)
-                                    ,_1: $Basics.toFloat((0 - model.y) * size - model.y)})($Graphics$Collage.filled(function () {
+                                    ,_0: $Basics.toFloat(model.pos.j * size + model.pos.j)
+                                    ,_1: $Basics.toFloat((0 - model.pos.i) * size - model.pos.i)})($Graphics$Collage.filled(function () {
          var _v0 = model.state;
          switch (_v0.ctor)
          {case "Alive":
@@ -298,18 +298,19 @@ Elm.Cell.make = function (_elm) {
             case "Dead":
             return $Color.grey;}
          _U.badCase($moduleName,
-         "between lines 27 and 29");
+         "between lines 28 and 30");
       }())(A2($Graphics$Collage.rect,
       $Basics.toFloat(size),
       $Basics.toFloat(size))));
    });
-   var Model = F3(function (a,
-   b,
-   c) {
+   var Position = F2(function (a,
+   b) {
+      return {_: {},i: a,j: b};
+   });
+   var Model = F2(function (a,b) {
       return {_: {}
-             ,state: c
-             ,x: a
-             ,y: b};
+             ,pos: a
+             ,state: b};
    });
    var Stable = {ctor: "Stable"};
    var Reproduction = {ctor: "Reproduction"};
@@ -327,7 +328,7 @@ Elm.Cell.make = function (_elm) {
                     Alive);
                   case "Nothing": return false;}
                _U.badCase($moduleName,
-               "between lines 35 and 37");
+               "between lines 36 and 38");
             }();
          },
          neighbours));
@@ -336,16 +337,15 @@ Elm.Cell.make = function (_elm) {
          2) ? Stable : _U.cmp(aliveNeighbours,
          3) > 0 ? Overcrowding : _U.eq(aliveNeighbours,
          3) ? Reproduction : _U.badIf($moduleName,
-         "between lines 38 and 41");
+         "between lines 39 and 42");
       }();
    };
    var Dead = {ctor: "Dead"};
    var init = F2(function (row,
    col) {
       return {_: {}
-             ,state: Dead
-             ,x: row
-             ,y: col};
+             ,pos: {_: {},i: row,j: col}
+             ,state: Dead};
    });
    var update = F2(function (neighbours,
    model) {
@@ -362,7 +362,7 @@ Elm.Cell.make = function (_elm) {
                                case "Underpopulation":
                                return Dead;}
                             _U.badCase($moduleName,
-                            "between lines 19 and 23");
+                            "between lines 20 and 24");
                          }()]],
       model);
    });
@@ -377,11 +377,11 @@ Elm.Cell.make = function (_elm) {
               Alive) ? $Maybe.Just(_U.replace([["state"
                                                ,Dead]],
               cell._0)) : _U.badIf($moduleName,
-              "between lines 47 and 48");
+              "between lines 48 and 49");
             case "Nothing":
             return $Maybe.Nothing;}
          _U.badCase($moduleName,
-         "between lines 45 and 48");
+         "between lines 46 and 49");
       }();
    };
    _elm.Cell.values = {_op: _op
@@ -389,7 +389,8 @@ Elm.Cell.make = function (_elm) {
                       ,update: update
                       ,view: view
                       ,flip: flip
-                      ,Model: Model};
+                      ,Model: Model
+                      ,Position: Position};
    return _elm.Cell.values;
 };
 Elm.Char = Elm.Char || {};
@@ -932,7 +933,7 @@ Elm.Controls.make = function (_elm) {
       _L.fromArray([A2($Html.i,
       _L.fromArray([$Html$Attributes.$class($String.concat(_L.fromArray(["fa fa-"
                                                                         ,action])))]),
-      _L.fromArray([]))]));
+      _L.fromArray([$Html.text(action)]))]));
    });
    _elm.Controls.values = {_op: _op
                           ,btn: btn};
@@ -1980,52 +1981,83 @@ Elm.Game.make = function (_elm) {
       },
       $Array.toList(game.cells)));
    });
-   var linearIndex = F3(function (x,
-   y,
+   var linearIndex = F3(function (i,
+   j,
    game) {
-      return x * game.rows + y;
+      return i * game.rows + j;
    });
    var getCell = F3(function (game,
-   x,
-   y) {
+   i,
+   j) {
       return A2($Array.get,
-      A3(linearIndex,x,y,game),
+      A3(linearIndex,i,j,game),
       game.cells);
    });
    var neighbours = F2(function (cell,
    game) {
       return _L.fromArray([A3(getCell,
                           game,
-                          cell.x - 1,
-                          cell.y - 1)
+                          cell.pos.i - 1,
+                          cell.pos.j - 1)
                           ,A3(getCell,
                           game,
-                          cell.x,
-                          cell.y - 1)
+                          cell.pos.i,
+                          cell.pos.j - 1)
                           ,A3(getCell,
                           game,
-                          cell.x + 1,
-                          cell.y - 1)
+                          cell.pos.i + 1,
+                          cell.pos.j - 1)
                           ,A3(getCell,
                           game,
-                          cell.x - 1,
-                          cell.y)
+                          cell.pos.i - 1,
+                          cell.pos.j)
                           ,A3(getCell,
                           game,
-                          cell.x + 1,
-                          cell.y)
+                          cell.pos.i + 1,
+                          cell.pos.j)
                           ,A3(getCell,
                           game,
-                          cell.x - 1,
-                          cell.y + 1)
+                          cell.pos.i - 1,
+                          cell.pos.j + 1)
                           ,A3(getCell,
                           game,
-                          cell.x,
-                          cell.y + 1)
+                          cell.pos.i,
+                          cell.pos.j + 1)
                           ,A3(getCell,
                           game,
-                          cell.x + 1,
-                          cell.y + 1)]);
+                          cell.pos.i + 1,
+                          cell.pos.j + 1)]);
+   });
+   var flipCell = F2(function (game,
+   _v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2":
+            return function () {
+                 var cell = $Cell.flip(A3(getCell,
+                 game,
+                 _v0._0,
+                 _v0._1));
+                 return function () {
+                    switch (cell.ctor)
+                    {case "Just":
+                       return _U.replace([["cells"
+                                          ,A3($Array.set,
+                                          A3(linearIndex,
+                                          _v0._0,
+                                          _v0._1,
+                                          game),
+                                          cell._0,
+                                          game.cells)]],
+                         game);
+                       case "Nothing": return game;}
+                    _U.badCase($moduleName,
+                    "between lines 45 and 47");
+                 }();
+              }();}
+         _U.badCase($moduleName,
+         "between lines 44 and 47");
+      }();
    });
    var Model = F4(function (a,
    b,
@@ -2038,19 +2070,19 @@ Elm.Game.make = function (_elm) {
              ,state: d};
    });
    var Pause = {ctor: "Pause"};
-   var init = function (_v0) {
+   var init = function (_v6) {
       return function () {
-         switch (_v0.ctor)
+         switch (_v6.ctor)
          {case "_Tuple2": return {_: {}
                                  ,cells: A2($Array.initialize,
-                                 _v0._0 * _v0._1,
+                                 _v6._0 * _v6._1,
                                  function (i) {
                                     return A2($Cell.init,
-                                    i / _v0._0 | 0,
-                                    A2($Basics.rem,i,_v0._0));
+                                    i / _v6._0 | 0,
+                                    A2($Basics.rem,i,_v6._0));
                                  })
-                                 ,cols: _v0._1
-                                 ,rows: _v0._0
+                                 ,cols: _v6._1
+                                 ,rows: _v6._0
                                  ,state: Pause};}
          _U.badCase($moduleName,
          "between lines 15 and 18");
@@ -2081,12 +2113,11 @@ Elm.Game.make = function (_elm) {
    };
    _elm.Game.values = {_op: _op
                       ,view: view
-                      ,getCell: getCell
                       ,init: init
                       ,step: step
-                      ,linearIndex: linearIndex
                       ,play: play
                       ,pause: pause
+                      ,flipCell: flipCell
                       ,Model: Model};
    return _elm.Game.values;
 };
@@ -2101,7 +2132,6 @@ Elm.GameView.make = function (_elm) {
    _U = _N.Utils.make(_elm),
    _L = _N.List.make(_elm),
    $moduleName = "GameView",
-   $Array = Elm.Array.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Cell = Elm.Cell.make(_elm),
    $Controls = Elm.Controls.make(_elm),
@@ -2112,7 +2142,6 @@ Elm.GameView.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Mouse = Elm.Mouse.make(_elm),
    $Signal = Elm.Signal.make(_elm),
-   $Signal$Extra = Elm.Signal.Extra.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
    var updateCellSize = F2(function (model,
@@ -2120,20 +2149,24 @@ Elm.GameView.make = function (_elm) {
       return function () {
          var cellSize = model.cellSize + diff;
          return _U.cmp(cellSize,
-         20) > -1 && _U.cmp(cellSize,
+         5) > -1 && _U.cmp(cellSize,
          100) < 1 ? _U.replace([["cellSize"
                                 ,cellSize]],
          model) : model;
       }();
    });
-   var findCell = F3(function (model,
-   x,
-   y) {
-      return _U.cmp(y,
-      50) < 0 ? $Maybe.Nothing : A3($Game.getCell,
-      model.game,
-      x / (model.cellSize + 1) | 0,
-      (y - 50) / (model.cellSize + 1) | 0);
+   var getCellPosition = F2(function (model,
+   _v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2":
+            return _U.cmp(_v0._1,
+              50) < 0 ? $Maybe.Nothing : $Maybe.Just({_: {}
+                                                     ,i: (_v0._1 - 50) / (model.cellSize + 1) | 0
+                                                     ,j: _v0._0 / (model.cellSize + 1) | 0});}
+         _U.badCase($moduleName,
+         "between lines 32 and 34");
+      }();
    });
    var update = F2(function (event,
    model) {
@@ -2178,30 +2211,24 @@ Elm.GameView.make = function (_elm) {
                switch (event._0.ctor)
                  {case "_Tuple2":
                     return function () {
-                         var cell = $Cell.flip(A3(findCell,
+                         var pos = A2(getCellPosition,
                          model,
-                         event._0._0,
-                         event._0._1));
+                         {ctor: "_Tuple2"
+                         ,_0: event._0._0
+                         ,_1: event._0._1});
                          return function () {
-                            switch (cell.ctor)
+                            switch (pos.ctor)
                             {case "Just":
-                               return function () {
-                                    var game$ = _U.replace([["cells"
-                                                            ,A3($Array.set,
-                                                            A3($Game.linearIndex,
-                                                            cell._0.x,
-                                                            cell._0.y,
-                                                            game),
-                                                            cell._0,
-                                                            game.cells)]],
-                                    game);
-                                    return _U.replace([["game"
-                                                       ,game$]],
-                                    model);
-                                 }();
+                               return _U.replace([["game"
+                                                  ,A2($Game.flipCell,
+                                                  game,
+                                                  {ctor: "_Tuple2"
+                                                  ,_0: pos._0.i
+                                                  ,_1: pos._0.j})]],
+                                 model);
                                case "Nothing": return model;}
                             _U.badCase($moduleName,
-                            "between lines 44 and 48");
+                            "between lines 41 and 44");
                          }();
                       }();}
                  break;
@@ -2210,27 +2237,17 @@ Elm.GameView.make = function (_elm) {
                                   ,$Game.step(game)]],
                  model);}
             _U.badCase($moduleName,
-            "between lines 42 and 54");
+            "between lines 39 and 50");
          }();
       }();
    });
-   var init = function (update) {
-      return function () {
-         switch (update.ctor)
-         {case "Dimensions":
-            switch (update._0.ctor)
-              {case "_Tuple2": return {_: {}
-                                      ,cellSize: 50
-                                      ,game: $Game.init({ctor: "_Tuple2"
-                                                        ,_0: (update._0._1 / 20 | 0) + 1
-                                                        ,_1: (update._0._0 / 20 | 0) + 1})
-                                      ,h: update._0._1
-                                      ,w: update._0._0};}
-              break;}
-         _U.badCase($moduleName,
-         "between lines 27 and 28");
-      }();
-   };
+   var init = {_: {}
+              ,cellSize: 50
+              ,game: $Game.init({ctor: "_Tuple2"
+                                ,_0: 40
+                                ,_1: 40})
+              ,h: 1000
+              ,w: 1000};
    var mailbox = $Signal.mailbox("stop");
    var view = F2(function (model,
    _v15) {
@@ -2267,7 +2284,7 @@ Elm.GameView.make = function (_elm) {
                            model.game,
                            model.cellSize))])))]));}
          _U.badCase($moduleName,
-         "between lines 65 and 84");
+         "between lines 61 and 80");
       }();
    });
    var Dimensions = function (a) {
@@ -2299,7 +2316,7 @@ Elm.GameView.make = function (_elm) {
                                                 A2($Signal.sampleOn,
                                                 $Mouse.clicks,
                                                 $Mouse.position))]));
-   var viewState = A3($Signal$Extra.foldp$,
+   var viewState = A3($Signal.foldp,
    update,
    init,
    updates);
@@ -2326,7 +2343,7 @@ Elm.GameView.make = function (_elm) {
                           ,Dimensions: Dimensions
                           ,mailbox: mailbox
                           ,init: init
-                          ,findCell: findCell
+                          ,getCellPosition: getCellPosition
                           ,update: update
                           ,updateCellSize: updateCellSize
                           ,view: view

@@ -1,4 +1,4 @@
-module Game (view, Model, getCell, init, step, linearIndex, play, pause) where
+module Game (view, Model, init, step, play, pause, flipCell) where
 
 import List exposing (map, any, length, filter, concatMap)
 import Graphics.Collage exposing (group, Form)
@@ -32,24 +32,31 @@ step game = if game.state == Play
             else game
 
 linearIndex : Int -> Int -> Model -> Int
-linearIndex x y game =
-  x * game.rows + y
+linearIndex i j game =
+  i * game.rows + j
 
 getCell : Model -> Int -> Int -> Maybe Cell.Model
-getCell game x y =
-  Array.get (linearIndex x y game) game.cells
+getCell game i j =
+  Array.get (linearIndex i j game) game.cells
+
+flipCell : Model -> (Int, Int) -> Model
+flipCell game (i,j) =
+  let cell = Cell.flip (getCell game i j) in
+  case cell of
+    Nothing -> game
+    Just cell -> {game | cells <- Array.set (linearIndex i j game) cell game.cells}
 
 neighbours : Cell.Model -> Model -> List (Maybe Cell.Model)
 neighbours cell game =
   [
-   getCell game (cell.x - 1) (cell.y - 1),
-   getCell game cell.x (cell.y - 1),
-   getCell game (cell.x + 1) (cell.y - 1),
-   getCell game (cell.x - 1) cell.y,
-   getCell game (cell.x + 1) cell.y,
-   getCell game (cell.x - 1) (cell.y + 1),
-   getCell game cell.x (cell.y + 1),
-   getCell game (cell.x + 1) (cell.y + 1)
+   getCell game (cell.pos.i - 1) (cell.pos.j - 1),
+   getCell game cell.pos.i (cell.pos.j - 1),
+   getCell game (cell.pos.i + 1) (cell.pos.j - 1),
+   getCell game (cell.pos.i - 1) cell.pos.j,
+   getCell game (cell.pos.i + 1) cell.pos.j,
+   getCell game (cell.pos.i - 1) (cell.pos.j + 1),
+   getCell game cell.pos.i (cell.pos.j + 1),
+   getCell game (cell.pos.i + 1) (cell.pos.j + 1)
   ]
 
 view : Model -> Int -> Form

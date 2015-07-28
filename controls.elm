@@ -17,5 +17,6 @@ btn action address =
    [
     Html.Attributes.class (String.concat ["fa fa-", action])
    ]
-   []
+
+   [text action]
   ]

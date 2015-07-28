@@ -12,38 +12,35 @@ import Graphics.Collage exposing (collage, move)
 import Signal exposing (..)
 import Signal.Extra exposing (foldp')
 
-import Game exposing (init, step, getCell, linearIndex)
+import Game exposing (init, step, flipCell)
 import Controls exposing (btn)
-import Cell exposing (Model, flip)
+import Cell exposing (Model, flip, Position)
 
 type alias Model = {w: Int, h: Int, cellSize: Int, game: Game.Model}
 type Updates = Action String | Timestamp Float | Flip (Int, Int) | Dimensions (Int, Int)
 
 mailbox = Signal.mailbox "stop"
 
-init : Updates -> Model
-init update =
-  case update of
-    Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 20) + 1, (w // 20) + 1)}
--- init = {w = 1000, h = 1000, cellSize = 50, game = Game.init(40,40)}
+-- init : Updates -> Model
+-- init update =
+--   case update of
+--     Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 5) + 1, (w // 5) + 1)}
+init = {w = 1000, h = 1000, cellSize = 50, game = Game.init(40,40)}
 
-findCell : Model -> Int -> Int -> Maybe Cell.Model
-findCell model x y =
+getCellPosition : Model -> (Int, Int) -> Maybe Cell.Position
+getCellPosition model (x, y) =
   if y < 50
   then Nothing
-  else Game.getCell model.game
-                    (x // (model.cellSize + 1))
-                    ((y - 50) // (model.cellSize + 1))
+  else Just {i = ((y - 50) // (model.cellSize + 1)), j = (x // (model.cellSize + 1))}
 
 update : Updates -> Model -> Model
 update event model =
   let game = model.game in
   case event of
-    Flip (x, y) -> let cell = Cell.flip (findCell model x y) in
-                   case cell of
+    Flip (x, y) -> let pos = getCellPosition model (x, y) in
+                   case pos of
                      Nothing -> model
-                     Just cell -> let game' = {game | cells <- Array.set (Game.linearIndex cell.x cell.y game) cell game.cells} in
-                                  {model | game <- game'}
+                     Just pos -> {model | game <- Game.flipCell game (pos.i,pos.j)}
     Timestamp _ -> {model | game <- Game.step game}
     Dimensions (w,h) -> {model | w <- w, h <- h}
     Action "play" -> {model | game <- Game.play game}
@@ -55,7 +52,7 @@ update event model =
 updateCellSize : Model -> Int -> Model
 updateCellSize model diff =
   let cellSize = (model.cellSize + diff) in
-  if cellSize >= 20 && cellSize <= 100
+  if cellSize >= 5 && cellSize <= 100
   then {model | cellSize <- cellSize}
   else model
 
@@ -89,5 +86,6 @@ updates = Signal.mergeMany [
            Flip <~ (Signal.sampleOn Mouse.clicks Mouse.position)
           ]
 
-viewState = foldp' update init updates
+-- viewState = foldp' update init updates
+viewState = foldp update init updates
 main = view <~ viewState ~ Window.dimensions

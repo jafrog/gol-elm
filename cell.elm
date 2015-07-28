@@ -1,6 +1,6 @@
-module Cell (Model, init, Condition, update, view, State, flip) where
+module Cell (Model, init, Condition, update, view, State, flip, Position) where
 
-import Graphics.Collage exposing (rect, filled, outlined, solid, move, Form)
+import Graphics.Collage exposing (rect, filled, outlined, solid, move, Form, collage, toForm)
 import Graphics.Input exposing (clickable)
 import Color
 import Debug
@@ -8,11 +8,12 @@ import List exposing (length, filter)
 
 type State = Dead | Alive
 type Condition = Underpopulation | Overcrowding | Reproduction | Stable
-type alias Model = {x: Int, y: Int, state: State}
+type alias Model = {pos: Position, state: State}
+type alias Position = {i: Int, j: Int}
 
 init : Int -> Int -> Model
 init row col =
-  {x = row, y = col, state = Dead}
+  {pos = {i = row, j = col}, state = Dead}
 
 update : List (Maybe Model) -> Model -> Model
 update neighbours model =
@@ -27,7 +28,7 @@ view model size =
   rect (toFloat size) (toFloat size) |> filled (case model.state of
                                                   Dead -> Color.grey
                                                   Alive -> Color.black)
-                                     |> move (toFloat <| model.x * size + model.x, toFloat <| -model.y * size - model.y)
+                                     |> move (toFloat <| model.pos.j * size + model.pos.j, toFloat <| -model.pos.i * size - model.pos.i)
 
 condition : List (Maybe Model) -> Condition
 condition neighbours =
