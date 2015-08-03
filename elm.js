@@ -340,6 +340,10 @@ Elm.Cell.make = function (_elm) {
          "between lines 39 and 42");
       }();
    };
+   var isAlive = function (cell) {
+      return _U.eq(cell.state,
+      Alive);
+   };
    var Dead = {ctor: "Dead"};
    var init = F2(function (row,
    col) {
@@ -389,6 +393,7 @@ Elm.Cell.make = function (_elm) {
                       ,update: update
                       ,view: view
                       ,flip: flip
+                      ,isAlive: isAlive
                       ,Model: Model
                       ,Position: Position};
    return _elm.Cell.values;
@@ -933,7 +938,7 @@ Elm.Controls.make = function (_elm) {
       _L.fromArray([A2($Html.i,
       _L.fromArray([$Html$Attributes.$class($String.concat(_L.fromArray(["fa fa-"
                                                                         ,action])))]),
-      _L.fromArray([$Html.text(action)]))]));
+      _L.fromArray([]))]));
    });
    _elm.Controls.values = {_op: _op
                           ,btn: btn};
@@ -1968,6 +1973,7 @@ Elm.Game.make = function (_elm) {
    $Array = Elm.Array.make(_elm),
    $Basics = Elm.Basics.make(_elm),
    $Cell = Elm.Cell.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm);
@@ -1981,6 +1987,11 @@ Elm.Game.make = function (_elm) {
       },
       $Array.toList(game.cells)));
    });
+   var allDead = function (game) {
+      return $Basics.not(A2($List.any,
+      $Cell.isAlive,
+      $Array.toList(game.cells)));
+   };
    var linearIndex = F3(function (i,
    j,
    game) {
@@ -2052,11 +2063,11 @@ Elm.Game.make = function (_elm) {
                          game);
                        case "Nothing": return game;}
                     _U.badCase($moduleName,
-                    "between lines 45 and 47");
+                    "between lines 46 and 48");
                  }();
               }();}
          _U.badCase($moduleName,
-         "between lines 44 and 47");
+         "between lines 45 and 48");
       }();
    });
    var Model = F4(function (a,
@@ -2085,7 +2096,7 @@ Elm.Game.make = function (_elm) {
                                  ,rows: _v6._0
                                  ,state: Pause};}
          _U.badCase($moduleName,
-         "between lines 15 and 18");
+         "between lines 16 and 19");
       }();
    };
    var pause = function (game) {
@@ -2100,7 +2111,11 @@ Elm.Game.make = function (_elm) {
       game);
    };
    var step = function (game) {
-      return _U.eq(game.state,
+      return allDead(game) ? _U.replace([["state"
+                                         ,Pause]],
+      game) : _U.eq(A2($Debug.watch,
+      "state",
+      game.state),
       Play) ? _U.replace([["cells"
                           ,A2($Array.map,
                           function (cell) {
@@ -2135,6 +2150,7 @@ Elm.GameView.make = function (_elm) {
    $Basics = Elm.Basics.make(_elm),
    $Cell = Elm.Cell.make(_elm),
    $Controls = Elm.Controls.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
    $Game = Elm.Game.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $Html = Elm.Html.make(_elm),
@@ -2142,19 +2158,9 @@ Elm.GameView.make = function (_elm) {
    $Maybe = Elm.Maybe.make(_elm),
    $Mouse = Elm.Mouse.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $Signal$Extra = Elm.Signal.Extra.make(_elm),
    $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
-   var updateCellSize = F2(function (model,
-   diff) {
-      return function () {
-         var cellSize = model.cellSize + diff;
-         return _U.cmp(cellSize,
-         5) > -1 && _U.cmp(cellSize,
-         100) < 1 ? _U.replace([["cellSize"
-                                ,cellSize]],
-         model) : model;
-      }();
-   });
    var getCellPosition = F2(function (model,
    _v0) {
       return function () {
@@ -2165,7 +2171,37 @@ Elm.GameView.make = function (_elm) {
                                                      ,i: (_v0._1 - 50) / (model.cellSize + 1) | 0
                                                      ,j: _v0._0 / (model.cellSize + 1) | 0});}
          _U.badCase($moduleName,
-         "between lines 32 and 34");
+         "between lines 36 and 38");
+      }();
+   });
+   var maxCellSize = 100;
+   var minCellSize = 20;
+   var init = function (update) {
+      return function () {
+         switch (update.ctor)
+         {case "Dimensions":
+            switch (update._0.ctor)
+              {case "_Tuple2": return {_: {}
+                                      ,cellSize: 50
+                                      ,game: $Game.init({ctor: "_Tuple2"
+                                                        ,_0: (update._0._1 / minCellSize | 0) + 1
+                                                        ,_1: (update._0._0 / minCellSize | 0) + 1})
+                                      ,h: update._0._1
+                                      ,w: update._0._0};}
+              break;}
+         _U.badCase($moduleName,
+         "between lines 30 and 31");
+      }();
+   };
+   var updateCellSize = F2(function (model,
+   diff) {
+      return function () {
+         var cellSize = model.cellSize + diff;
+         return _U.cmp(cellSize,
+         minCellSize) > -1 && _U.cmp(cellSize,
+         maxCellSize) < 1 ? _U.replace([["cellSize"
+                                        ,cellSize]],
+         model) : model;
       }();
    });
    var update = F2(function (event,
@@ -2173,9 +2209,11 @@ Elm.GameView.make = function (_elm) {
       return function () {
          var game = model.game;
          return function () {
-            switch (event.ctor)
-            {case "Action":
-               switch (event._0)
+            var _v8 = A2($Debug.watch,
+            "event",
+            event);
+            switch (_v8.ctor)
+            {case "Action": switch (_v8._0)
                  {case "minus":
                     return A2(updateCellSize,
                       model,
@@ -2200,22 +2238,22 @@ Elm.GameView.make = function (_elm) {
                       model);}
                  break;
                case "Dimensions":
-               switch (event._0.ctor)
+               switch (_v8._0.ctor)
                  {case "_Tuple2":
                     return _U.replace([["w"
-                                       ,event._0._0]
-                                      ,["h",event._0._1]],
+                                       ,_v8._0._0]
+                                      ,["h",_v8._0._1]],
                       model);}
                  break;
                case "Flip":
-               switch (event._0.ctor)
+               switch (_v8._0.ctor)
                  {case "_Tuple2":
                     return function () {
                          var pos = A2(getCellPosition,
                          model,
                          {ctor: "_Tuple2"
-                         ,_0: event._0._0
-                         ,_1: event._0._1});
+                         ,_0: _v8._0._0
+                         ,_1: _v8._0._1});
                          return function () {
                             switch (pos.ctor)
                             {case "Just":
@@ -2228,7 +2266,7 @@ Elm.GameView.make = function (_elm) {
                                  model);
                                case "Nothing": return model;}
                             _U.badCase($moduleName,
-                            "between lines 41 and 44");
+                            "between lines 45 and 48");
                          }();
                       }();}
                  break;
@@ -2237,22 +2275,15 @@ Elm.GameView.make = function (_elm) {
                                   ,$Game.step(game)]],
                  model);}
             _U.badCase($moduleName,
-            "between lines 39 and 50");
+            "between lines 43 and 54");
          }();
       }();
    });
-   var init = {_: {}
-              ,cellSize: 50
-              ,game: $Game.init({ctor: "_Tuple2"
-                                ,_0: 40
-                                ,_1: 40})
-              ,h: 1000
-              ,w: 1000};
    var mailbox = $Signal.mailbox("stop");
    var view = F2(function (model,
-   _v15) {
+   _v19) {
       return function () {
-         switch (_v15.ctor)
+         switch (_v19.ctor)
          {case "_Tuple2":
             return A2($Html.div,
               _L.fromArray([]),
@@ -2277,14 +2308,14 @@ Elm.GameView.make = function (_elm) {
                                         "plus",
                                         mailbox.address)]))
                            ,$Html.fromElement(A2($Graphics$Collage.collage,
-                           _v15._0,
-                           _v15._1)(_L.fromArray([$Graphics$Collage.move({ctor: "_Tuple2"
-                                                                         ,_0: (0 - $Basics.toFloat(_v15._0)) / 2 + $Basics.toFloat(model.cellSize) / 2
-                                                                         ,_1: $Basics.toFloat(_v15._1) / 2 - $Basics.toFloat(model.cellSize) / 2})(A2($Game.view,
+                           _v19._0,
+                           _v19._1)(_L.fromArray([$Graphics$Collage.move({ctor: "_Tuple2"
+                                                                         ,_0: (0 - $Basics.toFloat(_v19._0)) / 2 + $Basics.toFloat(model.cellSize) / 2
+                                                                         ,_1: $Basics.toFloat(_v19._1) / 2 - $Basics.toFloat(model.cellSize) / 2})(A2($Game.view,
                            model.game,
                            model.cellSize))])))]));}
          _U.badCase($moduleName,
-         "between lines 61 and 80");
+         "between lines 65 and 84");
       }();
    });
    var Dimensions = function (a) {
@@ -2316,7 +2347,7 @@ Elm.GameView.make = function (_elm) {
                                                 A2($Signal.sampleOn,
                                                 $Mouse.clicks,
                                                 $Mouse.position))]));
-   var viewState = A3($Signal.foldp,
+   var viewState = A3($Signal$Extra.foldp$,
    update,
    init,
    updates);
@@ -2342,6 +2373,8 @@ Elm.GameView.make = function (_elm) {
                           ,Flip: Flip
                           ,Dimensions: Dimensions
                           ,mailbox: mailbox
+                          ,minCellSize: minCellSize
+                          ,maxCellSize: maxCellSize
                           ,init: init
                           ,getCellPosition: getCellPosition
                           ,update: update

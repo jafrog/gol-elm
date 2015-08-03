@@ -1,4 +1,4 @@
-module Cell (Model, init, Condition, update, view, State, flip, Position) where
+module Cell (Model, init, Condition, update, view, State, flip, Position, isAlive) where
 
 import Graphics.Collage exposing (rect, filled, outlined, solid, move, Form, collage, toForm)
 import Graphics.Input exposing (clickable)
@@ -47,3 +47,7 @@ flip cell =
     Nothing -> Nothing
     Just cell -> if | cell.state == Dead -> Just {cell | state <- Alive}
                     | cell.state == Alive -> Just {cell | state <- Dead}
+
+isAlive : Model -> Bool
+isAlive cell =
+  cell.state == Alive

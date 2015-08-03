@@ -3,6 +3,7 @@ module Game (view, Model, init, step, play, pause, flipCell) where
 import List exposing (map, any, length, filter, concatMap)
 import Graphics.Collage exposing (group, Form)
 import Array exposing (Array)
+import Debug
 
 import Cell
 
@@ -27,9 +28,9 @@ pause game =
   {game | state <- Pause}
 
 step : Model -> Model
-step game = if game.state == Play
-            then {game | cells <- Array.map (\cell -> Cell.update (neighbours cell game) cell) game.cells}
-            else game
+step game = if | allDead game -> {game | state <- Pause}
+               | (Debug.watch "state" game.state == Play) -> {game | cells <- Array.map (\cell -> Cell.update (neighbours cell game) cell) game.cells}
+               | otherwise -> game
 
 linearIndex : Int -> Int -> Model -> Int
 linearIndex i j game =
@@ -58,6 +59,10 @@ neighbours cell game =
    getCell game cell.pos.i (cell.pos.j + 1),
    getCell game (cell.pos.i + 1) (cell.pos.j + 1)
   ]
+
+allDead : Model -> Bool
+allDead game =
+  not (any Cell.isAlive (Array.toList game.cells))
 
 view : Model -> Int -> Form
 view game cellSize =

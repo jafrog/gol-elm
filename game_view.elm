@@ -11,6 +11,7 @@ import Graphics.Element exposing (show)
 import Graphics.Collage exposing (collage, move)
 import Signal exposing (..)
 import Signal.Extra exposing (foldp')
+import Debug
 
 import Game exposing (init, step, flipCell)
 import Controls exposing (btn)
@@ -21,11 +22,14 @@ type Updates = Action String | Timestamp Float | Flip (Int, Int) | Dimensions (I
 
 mailbox = Signal.mailbox "stop"
 
--- init : Updates -> Model
--- init update =
---   case update of
---     Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // 5) + 1, (w // 5) + 1)}
-init = {w = 1000, h = 1000, cellSize = 50, game = Game.init(40,40)}
+minCellSize = 20
+maxCellSize = 100
+
+init : Updates -> Model
+init update =
+  case update of
+    Dimensions (w,h) -> {w = w, h = h, cellSize = 50, game = Game.init((h // minCellSize) + 1, (w // minCellSize) + 1)}
+-- init = {w = 1000, h = 1000, cellSize = 50, game = Game.init(40,40)}
 
 getCellPosition : Model -> (Int, Int) -> Maybe Cell.Position
 getCellPosition model (x, y) =
@@ -36,7 +40,7 @@ getCellPosition model (x, y) =
 update : Updates -> Model -> Model
 update event model =
   let game = model.game in
-  case event of
+  case Debug.watch "event" event of
     Flip (x, y) -> let pos = getCellPosition model (x, y) in
                    case pos of
                      Nothing -> model
@@ -52,7 +56,7 @@ update event model =
 updateCellSize : Model -> Int -> Model
 updateCellSize model diff =
   let cellSize = (model.cellSize + diff) in
-  if cellSize >= 5 && cellSize <= 100
+  if cellSize >= minCellSize && cellSize <= maxCellSize
   then {model | cellSize <- cellSize}
   else model
 
@@ -86,6 +90,6 @@ updates = Signal.mergeMany [
            Flip <~ (Signal.sampleOn Mouse.clicks Mouse.position)
           ]
 
--- viewState = foldp' update init updates
-viewState = foldp update init updates
+viewState = foldp' update init updates
+-- viewState = foldp update init updates
 main = view <~ viewState ~ Window.dimensions
