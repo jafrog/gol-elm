@@ -10,4 +10,4 @@ Go ahead, make a [glider](https://en.wikipedia.org/wiki/Glider_(Conway%27s_Life)
 
 # Technology
 
-It's written in [Elm](http://elm-lang.org) and intended as an excercise in Elm. Hence the implementation is quite naive, so CCW is very welcome.
+It's written in [Elm](http://elm-lang.org) and intended as an excercise in Elm. The implementation is quite naive, so criticism and PRs are very welcome.
