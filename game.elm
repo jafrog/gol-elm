@@ -3,6 +3,7 @@ module Game (view, Model, init, step, play, pause, flipCell) where
 import List exposing (map, any, length, filter, concatMap)
 import Graphics.Collage exposing (group, Form)
 import Array exposing (Array)
+import String exposing (isEmpty, split)
 import Debug
 
 import Cell
@@ -10,14 +11,19 @@ import Cell
 type State = Play | Pause
 type alias Model = {cells: Array Cell.Model, rows: Int, cols: Int, state: State}
 
-init : (Int, Int) -> Model
-init (rows, cols) =
+preInit : (Int, Int) -> Model
+preInit (rows, cols) =
   {
     rows = rows,
     cols = cols,
     cells = Array.initialize (rows*cols) (\i -> Cell.init (i // rows) (i `rem` rows)),
     state = Pause
   }
+
+init : (Int, Int) -> String -> Model
+init (rows, cols) stateParams =
+  preInit (rows, cols) |> initFromStateParams stateParams
+
 
 play : Model -> Model
 play game =
@@ -63,6 +69,26 @@ neighbours cell game =
 allDead : Model -> Bool
 allDead game =
   not (any Cell.isAlive (Array.toList game.cells))
+
+initFromStateParams : String -> Model -> Model
+initFromStateParams stateParams game =
+  if isEmpty stateParams
+  then game
+  else List.foldl (\pair game -> case pair of
+                                   Nothing -> game
+                                   Just pair -> flipCell game pair) game (parseStateParams stateParams)
+
+parseStateParams : String -> List (Maybe (Int, Int))
+parseStateParams stateParams =
+  map parsePair (split ";" stateParams)
+
+parsePair : String -> Maybe (Int, Int)
+parsePair pair =
+  case List.map (\int -> String.toInt int) (split "," pair) of
+    Ok hd :: tl -> case tl of
+                     Ok tlhd :: tltl -> Just (hd,tlhd)
+                     Err str :: tltl -> Nothing
+    Err str :: tl -> Nothing
 
 view : Model -> Int -> Form
 view game cellSize =

@@ -10,7 +10,10 @@ import String
 btn : String -> Signal.Address String -> Html
 btn action address =
   a
-  [onClick address action]
+  [
+   onClick address action,
+   Html.Attributes.href (if action == "share" then "#shareDialog" else "#")
+  ]
 
   [
    i
